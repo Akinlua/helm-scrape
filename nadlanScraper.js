@@ -21,7 +21,16 @@ async function scrapeNadlanDeals(url) {
         // Get the header row HTML once
         const headerHtml = await page.evaluate(() => {
             const headerRow = document.querySelector('table tr:first-child');
-            return headerRow ? headerRow.outerHTML : '';
+            // Clean up header by removing duplicate trend column if it exists
+            const cleanHeader = headerRow.cloneNode(true);
+            const trendCells = cleanHeader.querySelectorAll('th');
+            // Keep only the last trend column if duplicates exist
+            for (let i = 0; i < trendCells.length - 1; i++) {
+                if (trendCells[i].textContent.includes('Trend')) {
+                    trendCells[i].remove();
+                }
+            }
+            return cleanHeader.outerHTML;
         });
 
         while (hasNextPage && currentPage < 90) {
@@ -30,7 +39,18 @@ async function scrapeNadlanDeals(url) {
             // Get the rows from current page
             const pageRowsHtml = await page.evaluate(() => {
                 const rows = document.querySelectorAll('table tr:not(:first-child)');
-                return Array.from(rows).map(row => row.outerHTML).join('');
+                return Array.from(rows).map(row => {
+                    // Clean up each row by removing duplicate trend column
+                    const cleanRow = row.cloneNode(true);
+                    const cells = cleanRow.querySelectorAll('td');
+                    // Remove duplicate trend cells, keep only the last one
+                    for (let i = 0; i < cells.length - 1; i++) {
+                        if (cells[i].classList.contains('trend-summary')) {
+                            cells[i].remove();
+                        }
+                    }
+                    return cleanRow.outerHTML;
+                }).join('');
             });
 
             // Add rows to our collection
