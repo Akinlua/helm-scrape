@@ -14,19 +14,52 @@ async function scrapeNadlanDeals(url) {
         // Wait for the initial table to load
         await page.waitForSelector('table', { timeout: 1800000 });
 
-        // Get the HTML of the table
-        const tableHtml = await page.evaluate(() => {
-            const table = document.querySelector('table');
-            if (!table) return null;
-            
-            // Clean up the table by removing any duplicate trend columns
-            const cleanTable = table.cloneNode(true);
-            // Remove the trend summary elements if they exist
-            const trendSummaries = cleanTable.querySelectorAll('.trend-summary');
-            trendSummaries.forEach(el => el.remove());
-            
-            return cleanTable.outerHTML;
+        let hasNextPage = true;
+        let currentPage = 1;
+        let allTablesHtml = '';
+
+        // Get the header row HTML once
+        const headerHtml = await page.evaluate(() => {
+            const headerRow = document.querySelector('table tr:first-child');
+            return headerRow ? headerRow.outerHTML : '';
         });
+
+        while (hasNextPage && currentPage < 90) {
+            console.log(`Scraping page ${currentPage}...`);
+
+            // Get the rows from current page
+            const pageRowsHtml = await page.evaluate(() => {
+                const rows = document.querySelectorAll('table tr:not(:first-child)');
+                return Array.from(rows).map(row => row.outerHTML).join('');
+            });
+
+            // Add rows to our collection
+            allTablesHtml += pageRowsHtml;
+
+            // Check for next page button and click if exists
+            hasNextPage = await page.evaluate(() => {
+                const nextButton = document.querySelector('ul[data-v-26d3d030].pagination #next:not([disabled])');
+                if (nextButton) {
+                    nextButton.click();
+                    return true;
+                }
+                return false;
+            });
+
+            if (hasNextPage) {
+                // Wait for the table to update with new data
+                await page.waitForFunction(
+                    () => {
+                        const rows = document.querySelectorAll('table tr:not(:first-child)');
+                        return rows.length > 0;
+                    },
+                    { timeout: 1800000 }
+                );
+                currentPage++;
+                // Add a small delay to ensure content is fully loaded
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
 
         // Get neighborhood stats
         const stats = await page.evaluate(() => {
@@ -39,10 +72,14 @@ async function scrapeNadlanDeals(url) {
 
         await browser.close();
 
+        // Construct the complete table HTML
+        const tableHtml = `<table>${headerHtml}${allTablesHtml}</table>`;
+
         return {
             success: true,
             stats,
-            tableHtml
+            tableHtml,
+            totalPages: currentPage
         };
 
     } catch (error) {
@@ -54,5 +91,4 @@ async function scrapeNadlanDeals(url) {
     }
 }
 
-// Export the function if you're using it in other files
 module.exports = { scrapeNadlanDeals }; 
