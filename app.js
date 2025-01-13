@@ -3,25 +3,41 @@ const cors = require('cors');
 const { scrapeNadlanDeals } = require('./nadlanScraper');
 
 const app = express();
-const port = 3000;
+const port = 4000;
 
 app.use(cors());
 app.use(express.json());
 
 // Specific endpoint for Nadlan.gov.il
 app.get('/nadlan-deals', async (req, res) => {
-    const { id } = req.query;
+    const { display } = req.query;
     
-    if (!id) {
-        return res.status(400).json({
-            error: 'Neighborhood ID is required'
-        });
-    }
+    // if (!id) {
+    //     return res.status(400).json({
+    //         error: 'Neighborhood ID is required'
+    //     });
+    // }
 
     try {
-        const url = `https://www.nadlan.gov.il/?view=neighborhood&id=${id}&page=deals`;
+        // const url = `https://www.nadlan.gov.il/?view=neighborhood&id=${id}&page=deals`;
+        const url = 'https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals'
         const result = await scrapeNadlanDeals(url);
-        res.json(result);
+        
+        // Set content type to HTML if the client requests it
+        if(display === 'true'){
+            if (req.headers.accept && req.headers.accept.includes('text/html')) {
+                console.log("conetn")
+                res.setHeader('Content-Type', 'text/html');
+                res.send(result.tableHtml);
+            } else {
+                console.log("nodidnt")
+                // Otherwise send JSON response
+                res.json(result);
+            }
+        } else {
+            res.json(result);
+        }
+        
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -62,11 +78,21 @@ app.post('/scrape', async (req, res) => {
         // Wait for selector to be available
         await page.waitForSelector(selector, { timeout: 10000 });
 
-        // Get HTML content
+        // Get HTML content with improved error handling
         const htmlContent = await page.evaluate((selector) => {
             const elements = document.querySelectorAll(selector);
+            if (elements.length === 0) {
+                return null;
+            }
             return Array.from(elements).map(element => element.outerHTML);
         }, selector);
+
+        if (!htmlContent) {
+            return res.status(404).json({
+                success: false,
+                error: `No elements found matching selector: ${selector}`
+            });
+        }
 
         // Close browser
         await browser.close();
@@ -87,7 +113,7 @@ app.post('/scrape', async (req, res) => {
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/', (req, res) => {
     res.json({ status: 'OK' });
 });
 
