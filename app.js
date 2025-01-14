@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const { scrapeNadlanDeals } = require('./nadlanScraper');
+const puppeteer = require('puppeteer-core');
 
 const app = express();
-const port = 4000;
+const port = 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -17,6 +18,7 @@ app.get('/nadlan-deals', async (req, res) => {
     //         error: 'Neighborhood ID is required'
     //     });
     // }
+    console.log("nadlan-deals")
 
     try {
         // const url = `https://www.nadlan.gov.il/?view=neighborhood&id=${id}&page=deals`;
@@ -48,7 +50,10 @@ app.get('/nadlan-deals', async (req, res) => {
 
 // Keep the generic scraping endpoint
 app.post('/scrape', async (req, res) => {
-    const { url, selector } = req.body;
+    const { url, selector, display } = req.body;
+    console.log(url)
+    console.log(selector)
+    console.log(display)
 
     if (!url || !selector) {
         return res.status(400).json({
@@ -59,8 +64,8 @@ app.post('/scrape', async (req, res) => {
     try {
         // Launch browser
         const browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            headless: 'new'
         });
 
         // Create new page
@@ -70,22 +75,29 @@ app.post('/scrape', async (req, res) => {
         await page.setViewport({ width: 1920, height: 1080 });
 
         // Navigate to URL
+        console.log("navigating")
         await page.goto(url, {
             waitUntil: 'networkidle0',
-            timeout: 30000
+            timeout: 1800000
         });
+        console.log("navigated")
+
+        // Ensure the selector is treated as a class
+        const classSelector = selector.startsWith('.') ? selector : `.${selector}`;
 
         // Wait for selector to be available
-        await page.waitForSelector(selector, { timeout: 10000 });
+        await page.waitForSelector(classSelector, { timeout: 1800000 });
+        console.log("selector found")
 
         // Get HTML content with improved error handling
-        const htmlContent = await page.evaluate((selector) => {
-            const elements = document.querySelectorAll(selector);
+        const htmlContent = await page.evaluate((classSelector) => {
+            const elements = document.querySelectorAll(classSelector);
             if (elements.length === 0) {
                 return null;
             }
             return Array.from(elements).map(element => element.outerHTML);
-        }, selector);
+        }, classSelector);
+        console.log("html content")
 
         if (!htmlContent) {
             return res.status(404).json({
@@ -97,11 +109,17 @@ app.post('/scrape', async (req, res) => {
         // Close browser
         await browser.close();
 
-        // Return the scraped content
-        res.json({
-            success: true,
-            data: htmlContent
-        });
+        if(display === true || display ==='true'){
+            console.log("conetn")
+            res.setHeader('Content-Type', 'text/html');
+            res.send(htmlContent);
+        } else {
+            res.json({
+                success: true,
+                data: htmlContent
+            });
+        }
+
 
     } catch (error) {
         console.error('Scraping error:', error);

@@ -7,20 +7,22 @@ async function scrapeNadlanDeals(url) {
             headless: 'new'
         });
 
+        console.log("browser launched")
         const page = await browser.newPage();
         await page.setViewport({ width: 1920, height: 1080 });
         await page.goto(url, { waitUntil: 'networkidle0', timeout: 1800000 });
+        
 
         // Wait for the initial table to load
         await page.waitForSelector('table', { timeout: 1800000 });
 
         let hasNextPage = true;
-        let currentPage = 1;
+        let currentPage = 0;
         let allTablesHtml = '';
 
         // Get the header row HTML once
         const headerHtml = await page.evaluate(() => {
-            const headerRow = document.querySelector('table tr:first-child');
+            const headerRow = document.querySelector('table thead tr');
             // Clean up header by removing duplicate trend column if it exists
             const cleanHeader = headerRow.cloneNode(true);
             const trendCells = cleanHeader.querySelectorAll('th');
@@ -38,18 +40,18 @@ async function scrapeNadlanDeals(url) {
 
             // Get the rows from current page
             const pageRowsHtml = await page.evaluate(() => {
-                const rows = document.querySelectorAll('table tr:not(:first-child)');
+                const rows = document.querySelectorAll('table tbody tr');
                 return Array.from(rows).map(row => {
-                    // Clean up each row by removing duplicate trend column
-                    const cleanRow = row.cloneNode(true);
-                    const cells = cleanRow.querySelectorAll('td');
+                    // // Clean up each row by removing duplicate trend column
+                    // const cleanRow = row.cloneNode(true);
+                    const cells = row.querySelectorAll('td');
                     // Remove duplicate trend cells, keep only the last one
                     for (let i = 0; i < cells.length - 1; i++) {
                         if (cells[i].classList.contains('trend-summary')) {
                             cells[i].remove();
                         }
                     }
-                    return cleanRow.outerHTML;
+                    return row.outerHTML;
                 }).join('');
             });
 
