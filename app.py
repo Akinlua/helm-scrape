@@ -6,6 +6,10 @@ from selenium.webdriver.chrome.options import Options
 from nadlan_scraper import scrape_nadlan_deals, setup_driver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
 
@@ -71,4 +75,5 @@ def health_check():
     return jsonify({'status': 'OK'})
 
 if __name__ == '__main__':
-    app.run(port=4000) 
+    port = int(os.environ.get('PORT', 4000))
+    app.run(host='0.0.0.0', port=port) 
