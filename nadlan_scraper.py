@@ -18,66 +18,52 @@ def setup_driver():
 def scrape_nadlan_deals(url):
     try:
         driver = setup_driver()
-        # options = Options()
-        # options.headless = True
-        # service = Service('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe')
-        # driver = webdriver.Chrome(service=service, options=options)
-        
         driver.get(url)
         WebDriverWait(driver, 180).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'table'))
         )
-        # driver.implicitly_wait(30)
 
-       
-        header_html = driver.find_element(By.CSS_SELECTOR, 'table thead tr').get_attribute('outerHTML')
-        print(header_html)
-        print("header found")
+        header_html = WebDriverWait(driver, 180).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'table thead tr'))
+        ).get_attribute('outerHTML')
+        
         all_tables_html = ''
         has_next_page = True
         current_page = 0
         
         while has_next_page and current_page < 90:
-              # Wait for the table to load
-            WebDriverWait(driver, 180).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "table#dealsTable.mainTable tbody tr"))
-            )
-        
             print(f"Scraping page {current_page}...")
-            rows = driver.find_elements(By.CSS_SELECTOR, 'table tbody tr')
-            print(rows)
-            print("row found")
-
-            # # Locate the table rows (excluding the header)
-            # Parse the page source with Beautiful Soup
-            # soup = BeautifulSoup(page_source, "html.parser")
-            # rows = soup.select("table#dealsTable.mainTable tbody tr")
-            # # Collect all rows' HTML
-            # page_rows_html = "".join(str(row) for row in rows)
-
-            page_rows_html = ''.join([row.get_attribute('outerHTML') for row in rows])
+            # Wait for table rows to be present
+            WebDriverWait(driver, 180).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table#dealsTable.mainTable tbody tr"))
+            )
+            
+            # Get rows with explicit wait
+            rows = WebDriverWait(driver, 180).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'table tbody tr'))
+            )
+            
+            # Collect row HTML with retry mechanism
+            page_rows_html = ''
+            for row in rows:
+                try:
+                    page_rows_html += WebDriverWait(driver, 10).until(
+                        lambda d: row.get_attribute('outerHTML')
+                    )
+                except:
+                    continue
+                    
             all_tables_html += page_rows_html
             
-            page_source = driver.page_source
-            soup = BeautifulSoup(page_source, 'html.parser')
-            next_button = soup.select_one('ul[data-v-26d3d030].pagination #next:not([disabled])')
-            print("next button found")
-
-            if next_button:
-                # Locate the next button using Selenium
-                selenium_next_button = driver.find_element(By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])')
-                selenium_next_button.click()
-                print("next button clicked")
-                time.sleep(1)
+            try:
+                next_button = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
+                )
+                next_button.click()
+                time.sleep(2)  # Increased delay to ensure page loads
                 current_page += 1
-            else:
+            except:
                 has_next_page = False
-        
-        # stats = {
-        #     'yield': driver.find_element(By.CSS_SELECTOR, '.yield').text.strip(),
-        #     'priceChange': driver.find_element(By.CSS_SELECTOR, '.price-drop').text.strip(),
-        #     'neighborhoodRating': driver.find_element(By.CSS_SELECTOR, '.neighborhood-value').text.strip()
-        # }
         
         driver.quit()
         
@@ -85,11 +71,12 @@ def scrape_nadlan_deals(url):
         
         return {
             'success': True,
-            # 'stats': stats,
             'table_html': table_html,
             'totalPages': current_page
         }
     except Exception as e:
+        if 'driver' in locals():
+            driver.quit()
         return {
             'success': False,
             'error': str(e)

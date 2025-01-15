@@ -16,6 +16,7 @@ def nadlan_deals():
     
     try:
         result = scrape_nadlan_deals(url)
+        print(result)
         print("result")
         
         if display == 'true':
