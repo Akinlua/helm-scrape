@@ -49,10 +49,10 @@ def scrape():
         driver.get(url)
         print("navigated")
         WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.CLASS_NAME, selector))
+            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
         )
         
-        elements = driver.find_elements(By.CLASS_NAME, selector)
+        elements = driver.find_elements(By.CSS_SELECTOR, selector)
         print("elements found")
         html_content = [element.get_attribute('outerHTML') for element in elements]
         
