@@ -48,27 +48,63 @@ def scrape():
         print("navigating")
         driver.get(url)
         print("navigated")
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-        )
         
-        elements = driver.find_elements(By.CSS_SELECTOR, selector)
-        print("elements found")
-        html_content = [element.get_attribute('outerHTML') for element in elements]
+        try:
+            # Add specific timeout handling for selector
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+            )
+        except Exception as selector_error:
+            driver.quit()
+            return jsonify({
+                'success': False,
+                'error': f'Selector "{selector}" not found on the page. Please verify the selector is correct.'
+            }), 404
+            
+        try:
+            elements = driver.find_elements(By.CSS_SELECTOR, selector)
+            print("elements found")
+            html_content = [element.get_attribute('outerHTML') for element in elements]
+        except Exception as element_error:
+            driver.quit()
+            return jsonify({
+                'success': False,
+                'error': f'Error extracting content with selector "{selector}". Please verify the selector syntax.'
+            }), 400
         
         print("html content")
         driver.quit()
         print("driver quit")
 
         if not html_content:
-            return jsonify({'success': False, 'error': f'No elements found matching selector: {selector}'}), 404
+            return jsonify({
+                'success': False,
+                'error': f'No elements found matching selector: {selector}'
+            }), 404
         
         if display == 'true':
             return ''.join(html_content), 200, {'Content-Type': 'text/html'}
         else:
             return jsonify({'success': True, 'data': html_content})
+            
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        # Handle other general errors
+        error_message = str(e)
+        if "chrome not reachable" in error_message.lower():
+            return jsonify({
+                'success': False,
+                'error': 'Browser connection failed. Please try again.'
+            }), 500
+        elif "timeout" in error_message.lower():
+            return jsonify({
+                'success': False,
+                'error': 'Page load timed out. Please try again or check the URL.'
+            }), 504
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'An unexpected error occurred while scraping the page.'
+            }), 500
 
 @app.route('/', methods=['GET'])
 def health_check():
