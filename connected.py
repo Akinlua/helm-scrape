@@ -6,25 +6,16 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import time
-import os
 
 def setup_driver():
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
+    options.add_argument('--headless')  # Optional: run in headless mode
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--disable-software-rasterizer')
-    options.add_argument('--disable-webgl')
-    options.add_argument('--disable-accelerated-2d-canvas')
-    options.add_argument('--disable-3d-apis')
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    
-    service = Service(log_output=os.devnull)
-    driver = webdriver.Chrome(options=options, service=service)
+    driver = webdriver.Chrome(options=options)
     return driver
 
-def scrape_nadlan_deals(url):
+def scrape_nadlan_deals(url, stream=False):
     try:
         driver = setup_driver()
         driver.get(url)
@@ -56,37 +47,59 @@ def scrape_nadlan_deals(url):
             page_rows_html = ''
             for row in rows:
                 try:
-                    page_rows_html += WebDriverWait(driver, 10).until(
+                    row_html = WebDriverWait(driver, 10).until(
                         lambda d: row.get_attribute('outerHTML')
                     )
+                    page_rows_html += row_html
+                    
+                    if stream:
+                        yield {
+                            'type': 'row',
+                            'html': row_html,
+                            'page': current_page
+                        }
                 except:
                     continue
                     
             all_tables_html += page_rows_html
+            
+            if stream:
+                yield {
+                    'type': 'page_complete',
+                    'page': current_page,
+                    'total_pages': current_page + 1
+                }
             
             try:
                 next_button = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
                 )
                 next_button.click()
-                time.sleep(2)  # Increased delay to ensure page loads
+                time.sleep(2)
                 current_page += 1
             except:
                 has_next_page = False
         
         driver.quit()
         
-        table_html = f'<table>{header_html}{all_tables_html}</table>'
-        
-        return {
-            'success': True,
-            'table_html': table_html,
-            'totalPages': current_page
-        }
+        if not stream:
+            table_html = f'<table>{header_html}{all_tables_html}</table>'
+            return {
+                'success': True,
+                'table_html': table_html,
+                'totalPages': current_page
+            }
+            
     except Exception as e:
         if 'driver' in locals():
             driver.quit()
-        return {
-            'success': False,
-            'error': str(e)
-        } 
+        if stream:
+            yield {
+                'type': 'error',
+                'error': str(e)
+            }
+        else:
+            return {
+                'success': False,
+                'error': str(e)
+            } 
