@@ -17,6 +17,7 @@ app = Flask(__name__)
 def nadlan_deals():
     display = request.args.get('display', 'false')
     page = request.args.get('page')
+    print(page)
     url = 'https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals'
     
     try:
