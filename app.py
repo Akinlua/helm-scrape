@@ -36,6 +36,7 @@ def nadlan_deals():
 @app.route('/scrape', methods=['POST'])
 def scrape():
     data = request.json
+    print(data)
     url = data.get('url')
     selector = data.get('selector')
     display = data.get('display', 'false')
