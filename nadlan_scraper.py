@@ -63,7 +63,7 @@ def scrape_nadlan_deals(url, page=None):
         
         print("Starting scrape...")
         
-        # Wait for initial table load with increased timeout
+        # Wait for initial table load
         WebDriverWait(driver, 180).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'table'))
         )
@@ -79,58 +79,33 @@ def scrape_nadlan_deals(url, page=None):
         # If specific page is requested, navigate to that page
         if page is not None and page > 0:
             print(f"Navigating to page {page}...")
-            current_page = 0
+            current_page = 1
             while current_page < page:
                 try:
-                    # Try different methods to find and click the next button
-                    try:
-                        # Method 1: Using JavaScript to find and click
-                        has_next = driver.execute_script("""
-                            const nextButton = document.querySelector('ul[data-v-26d3d030].pagination #next:not([disabled])');
-                            if (nextButton) {
-                                nextButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                setTimeout(() => nextButton.click(), 100);
-                                return true;
-                            }
-                            return false;
-                        """)
-                        
-                        if not has_next:
-                            print("No next button found")
-                            break
-                            
-                    except Exception as js_error:
-                        print(f"JavaScript click failed: {str(js_error)}")
-                        # Method 2: Traditional Selenium approach
-                        next_button = WebDriverWait(driver, 10).until(
-                            EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
-                        )
-                        driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
-                        next_button.click()
+                    # Wait for next button to be clickable
+                    next_button = WebDriverWait(driver, 10).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
+                    )
                     
+                    # Scroll the button into view
+                    driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
+                    
+                    # Click using JavaScript
+                    driver.execute_script("arguments[0].click();", next_button)
                     current_page += 1
                     print(f"Clicked to page {current_page}")
                     
                 except Exception as e:
                     print(f"Navigation error: {str(e)}")
                     break
+        # Wait for table content to update
+        WebDriverWait(driver, 180).until(
+            lambda d: d.execute_script("""
+                return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
+            """)
+        )
+        time.sleep(1)
 
-            # Wait for table content to update with retry mechanism
-            retry_count = 0
-            while retry_count < 3:
-                try:
-                    WebDriverWait(driver, 60).until(
-                        lambda d: d.execute_script("""
-                            return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
-                        """)
-                    )
-                    break
-                except Exception as wait_error:
-                    print(f"Wait retry {retry_count + 1}: {str(wait_error)}")
-                    retry_count += 1
-            
-            if retry_count == 3:
-                raise Exception("Failed to verify page load after multiple retries")
         # Get the rows from the current page
         try:
             page_rows_html = driver.execute_script("""
