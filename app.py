@@ -16,13 +16,19 @@ app = Flask(__name__)
 @app.route('/nadlan-deals', methods=['GET'])
 def nadlan_deals():
     display = request.args.get('display', 'false')
+    page = request.args.get('page')
     url = 'https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals'
     
     try:
-        result = scrape_nadlan_deals(url)
-        # print(result)
-        print("result")
+        # Convert page to integer if it exists
+        page = int(page) if page is not None else None
         
+        result = scrape_nadlan_deals(url, page=page)
+        print(f"Scraping result: {result}")  # Debug log
+        
+        if not result['success']:
+            return jsonify(result), 500
+            
         if display == 'true':
             if 'text/html' in request.headers.get('Accept', ''):
                 return result['table_html'], 200, {'Content-Type': 'text/html'}
@@ -30,7 +36,10 @@ def nadlan_deals():
                 return jsonify(result)
         else:
             return jsonify(result)
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Invalid page number'}), 400
     except Exception as e:
+        print(f"Route error: {str(e)}")  # Debug log
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/scrape', methods=['POST'])
@@ -52,7 +61,7 @@ def scrape():
         
         try:
             # Add specific timeout handling for selector
-            WebDriverWait(driver, 30).until(
+            WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, selector))
             )
         except Exception as selector_error:

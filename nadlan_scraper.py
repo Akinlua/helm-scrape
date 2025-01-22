@@ -10,79 +10,137 @@ import os
 
 def setup_driver():
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
+    
+    # Add performance-focused arguments
+    options.add_argument('--headless=new')  # New headless mode
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-infobars')
     options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-browser-side-navigation')
     options.add_argument('--disable-gpu')
-    options.add_argument('--disable-software-rasterizer')
-    options.add_argument('--disable-webgl')
-    options.add_argument('--disable-accelerated-2d-canvas')
-    options.add_argument('--disable-3d-apis')
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    options.add_argument('--no-sandbox')
+    options.add_argument('--log-level=3')
+    options.add_argument('--disable-logging')
+    options.add_argument('--disable-images')
+    
+    # Disable unnecessary features
+    prefs = {
+        'profile.default_content_setting_values': {
+            'images': 2,
+            'plugins': 2,
+            'popups': 2,
+            'geolocation': 2,
+            'notifications': 2,
+            'auto_select_certificate': 2,
+            'fullscreen': 2,
+            'mouselock': 2,
+            'mixed_script': 2,
+            'media_stream': 2,
+            'media_stream_mic': 2,
+            'media_stream_camera': 2,
+            'protocol_handlers': 2,
+            'ppapi_broker': 2,
+            'automatic_downloads': 2,
+            'midi_sysex': 2,
+            'push_messaging': 2,
+            'ssl_cert_decisions': 2,
+            'metro_switch_to_desktop': 2,
+            'protected_media_identifier': 2,
+            'app_banner': 2,
+            'site_engagement': 2,
+            'durable_storage': 2
+        }
+    }
+    options.add_experimental_option('prefs', prefs)
     
     service = Service(log_output=os.devnull)
-    driver = webdriver.Chrome(options=options, service=service)
-    return driver
+    return webdriver.Chrome(options=options, service=service)
 
-def scrape_nadlan_deals(url):
+def scrape_nadlan_deals(url, page=None):
     try:
         driver = setup_driver()
         driver.get(url)
+        
+        print("Starting scrape...")
+        
+        # Wait for initial table load
         WebDriverWait(driver, 180).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'table'))
         )
+
+        print("Table found...")
 
         header_html = WebDriverWait(driver, 180).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'table thead tr'))
         ).get_attribute('outerHTML')
         
-        all_tables_html = ''
-        has_next_page = True
-        current_page = 0
+        print(f"Header HTML: {header_html[:100]}...")
         
-        while has_next_page and current_page < 90:
-            print(f"Scraping page {current_page}...")
-            # Wait for table rows to be present
-            WebDriverWait(driver, 180).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table#dealsTable.mainTable tbody tr"))
-            )
-            
-            # Get rows with explicit wait
-            rows = WebDriverWait(driver, 180).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'table tbody tr'))
-            )
-            
-            # Collect row HTML with retry mechanism
-            page_rows_html = ''
-            for row in rows:
+        # If specific page is requested, navigate to that page
+        if page is not None and page > 0:
+            print(f"Navigating to page {page}...")
+            current_page = 1
+            while current_page < page:
                 try:
-                    page_rows_html += WebDriverWait(driver, 10).until(
-                        lambda d: row.get_attribute('outerHTML')
+                    # Wait for next button to be clickable
+                    next_button = WebDriverWait(driver, 10).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
                     )
-                except:
-                    continue
                     
-            all_tables_html += page_rows_html
+                    # Scroll the button into view
+                    driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
+                    
+                    # Click using JavaScript
+                    driver.execute_script("arguments[0].click();", next_button)
+                    current_page += 1
+                    print(f"Clicked to page {current_page}")
+                    
+                except Exception as e:
+                    print(f"Navigation error: {str(e)}")
+                    break
+        # Wait for table content to update
+        WebDriverWait(driver, 180).until(
+            lambda d: d.execute_script("""
+                return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
+            """)
+        )
+        time.sleep(1)
+
+        # Get the rows from the current page
+        try:
+            page_rows_html = driver.execute_script("""
+                const rows = document.querySelectorAll('table#dealsTable.mainTable tbody tr');
+                return Array.from(rows).map(row => {
+                    const cells = row.querySelectorAll('td');
+                    for (let i = 0; i < cells.length - 1; i++) {
+                        if (cells[i].classList.contains('trend-summary')) {
+                            cells[i].remove();
+                        }
+                    }
+                    return row.outerHTML;
+                }).join('');
+            """)
             
-            try:
-                next_button = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
-                )
-                next_button.click()
-                time.sleep(2)  # Increased delay to ensure page loads
-                current_page += 1
-            except:
-                has_next_page = False
-        
+            print(f"Rows HTML length: {len(page_rows_html)}")
+            
+            if not page_rows_html:
+                raise Exception("No rows found on page")
+                
+        except Exception as e:
+            print(f"Row extraction error: {str(e)}")
+            raise e
+
         driver.quit()
         
-        table_html = f'<table>{header_html}{all_tables_html}</table>'
+        # Construct final table HTML
+        final_table_html = f'<table>{header_html}{page_rows_html}</table>'
         
         return {
             'success': True,
-            'table_html': table_html,
-            'totalPages': current_page
+            'table_html': final_table_html,
+            'page': page if page is not None else 0
         }
+        
     except Exception as e:
         if 'driver' in locals():
             driver.quit()
