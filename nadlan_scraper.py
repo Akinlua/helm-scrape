@@ -98,37 +98,80 @@ def scrape_nadlan_deals(url, page=None):
                 except Exception as e:
                     print(f"Navigation error: {str(e)}")
                     break
-        # Wait for table content to update
-        WebDriverWait(driver, 180).until(
-            lambda d: d.execute_script("""
-                return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
-            """)
-        )
-        time.sleep(1)
+            # Wait for table content to update
+            WebDriverWait(driver, 180).until(
+                lambda d: d.execute_script("""
+                    return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
+                """)
+            )
+            time.sleep(1)
 
-        # Get the rows from the current page
-        try:
-            page_rows_html = driver.execute_script("""
-                const rows = document.querySelectorAll('table#dealsTable.mainTable tbody tr');
-                return Array.from(rows).map(row => {
-                    const cells = row.querySelectorAll('td');
-                    for (let i = 0; i < cells.length - 1; i++) {
-                        if (cells[i].classList.contains('trend-summary')) {
-                            cells[i].remove();
+            # Get the rows from the current page
+            try:
+                page_rows_html = driver.execute_script("""
+                    const rows = document.querySelectorAll('table#dealsTable.mainTable tbody tr');
+                    return Array.from(rows).map(row => {
+                        const cells = row.querySelectorAll('td');
+                        for (let i = 0; i < cells.length - 1; i++) {
+                            if (cells[i].classList.contains('trend-summary')) {
+                                cells[i].remove();
+                            }
                         }
-                    }
-                    return row.outerHTML;
-                }).join('');
-            """)
-            
-            print(f"Rows HTML length: {len(page_rows_html)}")
-            
-            if not page_rows_html:
-                raise Exception("No rows found on page")
+                        return row.outerHTML;
+                    }).join('');
+                """)
                 
-        except Exception as e:
-            print(f"Row extraction error: {str(e)}")
-            raise e
+                print(f"Rows HTML length: {len(page_rows_html)}")
+                
+                if not page_rows_html:
+                    raise Exception("No rows found on page")
+                    
+            except Exception as e:
+                print(f"Row extraction error: {str(e)}")
+                raise e
+        else:
+            current_page = 1
+            page_rows_html = ""
+            while current_page < 100:
+                print(f"Navigating to page {current_page}...")
+                try:
+                    # Wait for table content to update
+                    WebDriverWait(driver, 180).until(
+                        lambda d: d.execute_script("""
+                            return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
+                        """)
+                    )
+                    
+                    page_rows_html += driver.execute_script("""
+                        const rows = document.querySelectorAll('table#dealsTable.mainTable tbody tr');
+                        return Array.from(rows).map(row => {
+                            const cells = row.querySelectorAll('td');
+                            for (let i = 0; i < cells.length - 1; i++) {
+                                if (cells[i].classList.contains('trend-summary')) {
+                                    cells[i].remove();
+                                }
+                            }
+                            return row.outerHTML;
+                        }).join('');
+                    """)
+                    
+                    # Wait for next button to be clickable
+                    next_button = WebDriverWait(driver, 10).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
+                    )
+                    
+                    # Scroll the button into view
+                    driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
+                    
+                    # Click using JavaScript
+                    driver.execute_script("arguments[0].click();", next_button)
+                    current_page += 1
+                    print(f"Clicked to page {current_page}")
+                    
+                except Exception as e:
+                    print(f"Navigation error: {str(e)}")
+                    break 
+        
 
         driver.quit()
         
