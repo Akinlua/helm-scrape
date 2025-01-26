@@ -182,7 +182,7 @@ def scrape_nadlan_deals(url, page=None):
             'success': True,
             'table_html': final_table_html,
             'page': page if page is not None else 0,
-            'total_pages': current_page
+            'total_pages': 100
         }
         
     except Exception as e:
