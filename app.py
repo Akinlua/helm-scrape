@@ -25,7 +25,7 @@ def nadlan_deals():
         page = int(page) if page is not None else None
         
         result = scrape_nadlan_deals(url, page=page)
-        print(f"Scraping result: {result}")  # Debug log
+        # print(f"Scraping result: {result}")  # Debug log
         
         if not result['success']:
             return jsonify(result), 500
