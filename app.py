@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import os
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -116,6 +117,101 @@ def scrape():
                 'success': False,
                 'error': 'An unexpected error occurred while scraping the page.'
             }), 500
+
+@app.route('/autocomplete', methods=['POST'])
+def autocomplete():
+    data = request.json
+    search_text = data.get('text')
+    print(f"search_text: {search_text}")
+    
+    if not search_text:
+        return jsonify({'error': 'Search text is required'}), 400
+        
+    try:
+        print("setting")
+        driver = setup_driver()
+        print("driver setup")
+        driver.get('https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals')
+        print("driver get")
+        
+        # Wait for search input and enter text
+        search_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "myInput2"))
+        )
+        print("search input")
+        search_input.send_keys(search_text)
+        print("search input send keys")
+        
+        # Wait for suggestions
+        suggestions_list = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
+        )
+        print("suggestions list")
+
+        # Get all suggestions
+        suggestions = driver.find_elements(By.CSS_SELECTOR, ".react-autosuggest__suggestions-list li")
+        print(suggestions)
+        def process_suggestion(text):
+            print(text)
+            try:
+                print("setting suggestion driver")
+                suggestion_driver = setup_driver()
+                print("suggestion driver setup")
+                suggestion_driver.get('https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals')
+                
+                # Wait for and enter search text
+                search_input = WebDriverWait(suggestion_driver, 10).until(
+                    EC.presence_of_element_located((By.ID, "myInput2"))
+                )
+                search_input.send_keys(search_text)
+                
+                # Wait for suggestions list
+                WebDriverWait(suggestion_driver, 10).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
+                )
+                
+                # Click directly on the matching suggestion
+                suggestion_element = WebDriverWait(suggestion_driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, f"//li[normalize-space()='{text}']"))
+                )
+                print(f"suggestion_element: {suggestion_element}")
+                suggestion_element.click()
+                print("clicked")
+                
+                # Get URL after click
+                current_url = suggestion_driver.current_url
+                suggestion_driver.quit()
+                print("driver quit")
+                return {
+                    "text": text,
+                    "link": current_url
+                }
+                
+            except Exception as e:
+                print(f"Error processing suggestion '{text}': {str(e)}")
+                if 'suggestion_driver' in locals():
+                    suggestion_driver.quit()
+                return None
+        
+        # Process suggestions in parallel
+        results = []
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(process_suggestion, suggestion.text) for suggestion in suggestions]
+            for future in futures:
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        driver.quit()
+        return jsonify(results)
+        
+    except Exception as e:
+        if 'driver' in locals():
+            driver.quit()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/', methods=['GET'])
 def health_check():
