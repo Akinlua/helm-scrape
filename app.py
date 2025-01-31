@@ -216,6 +216,7 @@ def autocomplete():
         return jsonify(results)
         
     except Exception as e:
+        print(f"Error in autocomplete: {str(e)}")
         if 'driver' in locals():
             driver.quit()
         return jsonify({
