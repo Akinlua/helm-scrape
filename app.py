@@ -144,79 +144,82 @@ def autocomplete():
         )
         print("search input")
 
-        # Clear and set initial search text using JavaScript with retry mechanism
-        driver.execute_script("""
-            const input = document.getElementById('myInput2');
-            input.value = '';  // Clear first
-            input.value = arguments[0];
-            input.focus();
-            input.dispatchEvent(new Event('focus', { bubbles: true }));
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-            input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-            input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-        """, search_text)
-        print("search input send keys")
-        driver.save_screenshot("enterd_search.png")
-
-        # Add a check and retry mechanism to ensure text stays
         max_retries = 3
         for retry in range(max_retries):
-            time.sleep(2)  # Short wait
-            current_value = driver.execute_script("""
-                return document.getElementById('myInput2').value;
+            # Clear first
+            driver.execute_script("""
+                const input = document.getElementById('myInput2');
+                input.value = '';
+                input.focus();
             """)
-            print(f"Current value: {current_value}")
             
-            if not current_value:  # If text disappeared
-                print(f"Text disappeared, retry {retry + 1}")
+            # Type like a human, character by character
+            for char in search_text:
                 driver.execute_script("""
                     const input = document.getElementById('myInput2');
-                    input.value = arguments[0];
-                    input.focus();
-                    input.dispatchEvent(new Event('focus', { bubbles: true }));
+                    input.value += arguments[0];
                     input.dispatchEvent(new Event('input', { bubbles: true }));
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
                     input.dispatchEvent(new KeyboardEvent('keydown', { 
                         bubbles: true,
-                        key: 'Process',
-                        code: 'Process'
+                        key: arguments[0],
+                        code: 'Key' + arguments[0].toUpperCase()
                     }));
-                """, search_text)
-            else:
-                print("Text remained in input")
+                """, char)
+                time.sleep(0.1)  # Small delay between characters
+            
+            print(f"Typed text attempt {retry + 1}")
+            driver.save_screenshot(f"typed_search_{retry + 1}.png")
+            
+            # Check if suggestions appeared
+            try:
+                WebDriverWait(driver, 5).until(
+                    lambda d: d.execute_script("""
+                        return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
+                               document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
+                    """)
+                )
+                print("Suggestions found!")
                 break
+            except Exception as e:
+                print(f"No suggestions on attempt {retry + 1}, retrying...")
+                if retry == max_retries - 1:
+                    print("Failed to get suggestions after all retries")
+                    driver.quit()
+                    return jsonify({
+                        'success': False,
+                        'error': 'No suggestions found after multiple attempts'
+                    }), 404
 
         driver.save_screenshot("enterd_search_2.png")
         
         # Wait for suggestions using JavaScript
 
         
-        try:
-            print("waiting for suggestions")
-            time.sleep(10)
-            driver.save_screenshot("enterd_search_3.png")
-            # wait for suggestions to show
-            WebDriverWait(driver, 60).until(
-                EC.presence_of_element_located((By.ID, 'react-autowhatever-1'))
-            )
-            print("suggestions showed")
-            driver.save_screenshot("suggestions_showed.png")
-            # WebDriverWait(driver, 60).until(
-            #     lambda d: d.execute_script("""
-            #         return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
-            #                document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
-            #     """)
-            # )
-            print("suggestions list")
-        except Exception as e:
-            print(f"Error waiting for suggestions: {str(e)}")
-            driver.save_screenshot("debug.png")
-            driver.quit()
-            return jsonify({
-                'success': False,
-                'error': 'No suggestions found'
-            }), 404
+        # try:
+        #     # print("waiting for suggestions")
+        #     # time.sleep(10)
+        #     driver.save_screenshot("enterd_search_3.png")
+        #     # wait for suggestions to show
+        #     WebDriverWait(driver, 60).until(
+        #         EC.presence_of_element_located((By.ID, 'react-autowhatever-1'))
+        #     )
+        #     print("suggestions showed")
+        #     driver.save_screenshot("suggestions_showed.png")
+        #     # WebDriverWait(driver, 60).until(
+        #     #     lambda d: d.execute_script("""
+        #     #         return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
+        #     #                document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
+        #     #     """)
+        #     # )
+        #     print("suggestions list")
+        # except Exception as e:
+        #     print(f"Error waiting for suggestions: {str(e)}")
+        #     driver.save_screenshot("debug.png")
+        #     driver.quit()
+        #     return jsonify({
+        #         'success': False,
+        #         'error': 'No suggestions found'
+        #     }), 404
 
         # Get all suggestions with their IDs using JavaScript
         suggestion_data = driver.execute_script("""
