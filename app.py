@@ -135,7 +135,7 @@ def autocomplete():
         print("driver get")
         
         # Wait for search input and enter text
-        search_input = WebDriverWait(driver, 10).until(
+        search_input = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.ID, "myInput2"))
         )
         print("search input")
@@ -143,7 +143,7 @@ def autocomplete():
         print("search input send keys")
         
         # Wait for suggestions
-        suggestions_list = WebDriverWait(driver, 10).until(
+        suggestions_list = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
         )
         print("suggestions list")
@@ -162,8 +162,11 @@ def autocomplete():
         results = []
         for data in suggestion_data:
             try:
+                # Store the current URL before clicking
+                original_url = driver.current_url
+                
                 # Click the suggestion using ID
-                suggestion_element = WebDriverWait(driver, 10).until(
+                suggestion_element = WebDriverWait(driver, 60).until(
                     EC.element_to_be_clickable((By.ID, data["id"]))
                 )
                 print(f"data: {data}")
@@ -171,7 +174,12 @@ def autocomplete():
                 suggestion_element.click()
                 print("clicked")
                 
-                # Get URL after click
+                # Wait for URL to change
+                WebDriverWait(driver, 60).until(
+                    lambda d: d.current_url != original_url
+                )
+                
+                # Get URL after navigation completes
                 current_url = driver.current_url
                 print(f"current_url: {current_url}")
                 
@@ -180,16 +188,23 @@ def autocomplete():
                     "link": current_url
                 })
                 
-                # Go back and re-enter search text for next iteration
+                # Navigate back
                 driver.back()
-                search_input = WebDriverWait(driver, 10).until(
+                
+                # Wait for original URL to be restored
+                WebDriverWait(driver, 60).until(
+                    lambda d: d.current_url == original_url
+                )
+                
+                # Wait for and re-enter search text
+                search_input = WebDriverWait(driver, 60).until(
                     EC.presence_of_element_located((By.ID, "myInput2"))
                 )
                 search_input.clear()
                 search_input.send_keys(search_text)
                 
                 # Wait for suggestions list to reappear
-                WebDriverWait(driver, 10).until(
+                WebDriverWait(driver, 60).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
                 )
                 
