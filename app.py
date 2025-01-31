@@ -135,7 +135,7 @@ def autocomplete():
         print("driver get")
         
         # Wait for search input and enter text
-        search_input = WebDriverWait(driver, 60).until(
+        search_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "myInput2"))
         )
         print("search input")
@@ -143,7 +143,7 @@ def autocomplete():
         print("search input send keys")
         
         # Wait for suggestions
-        suggestions_list = WebDriverWait(driver, 60).until(
+        suggestions_list = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
         )
         print("suggestions list")
@@ -158,26 +158,11 @@ def autocomplete():
             })
         print(suggestion_data)
         
-        def process_suggestion(data):
+        results = []
+        for data in suggestion_data:
             try:
-                print("setting suggestion driver")
-                suggestion_driver = setup_driver()
-                print("suggestion driver setup")
-                suggestion_driver.get('https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals')
-                
-                # Wait for and enter search text
-                search_input = WebDriverWait(suggestion_driver, 60).until(
-                    EC.presence_of_element_located((By.ID, "myInput2"))
-                )
-                search_input.send_keys(search_text)
-                
-                # Wait for suggestions list
-                WebDriverWait(suggestion_driver, 60).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
-                )
-                
-                # Click directly on the matching suggestion using ID
-                suggestion_element = WebDriverWait(suggestion_driver, 60).until(
+                # Click the suggestion using ID
+                suggestion_element = WebDriverWait(driver, 10).until(
                     EC.element_to_be_clickable((By.ID, data["id"]))
                 )
                 print(f"data: {data}")
@@ -186,29 +171,30 @@ def autocomplete():
                 print("clicked")
                 
                 # Get URL after click
-                current_url = suggestion_driver.current_url
+                current_url = driver.current_url
                 print(f"current_url: {current_url}")
-                suggestion_driver.quit()
-                print("driver quit")
-                return {
+                
+                results.append({
                     "text": data["text"],
                     "link": current_url
-                }
+                })
+                
+                # Go back and re-enter search text for next iteration
+                driver.back()
+                search_input = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.ID, "myInput2"))
+                )
+                search_input.clear()
+                search_input.send_keys(search_text)
+                
+                # Wait for suggestions list to reappear
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
+                )
                 
             except Exception as e:
                 print(f"Error processing suggestion '{data}': {str(e)}")
-                if 'suggestion_driver' in locals():
-                    suggestion_driver.quit()
-                return None
-        
-        # Process suggestions in parallel
-        results = []
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(process_suggestion, data) for data in suggestion_data]
-            for future in futures:
-                result = future.result()
-                if result:
-                    results.append(result)
+                continue
         
         driver.quit()
         return jsonify(results)
