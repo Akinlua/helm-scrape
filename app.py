@@ -162,9 +162,9 @@ def autocomplete():
         # Get all suggestions with their IDs using JavaScript
         suggestion_data = driver.execute_script("""
             const suggestions = document.querySelectorAll('.react-autosuggest__suggestions-list li');
-            return Array.from(suggestions).map((suggestion, index) => ({
+            return Array.from(suggestions).map(suggestion => ({
                 text: suggestion.textContent,
-                id: `react-autowhatever-1--item-${index}`
+                id: suggestion.getAttribute('id')
             }));
         """)
         print(suggestion_data)
@@ -175,12 +175,24 @@ def autocomplete():
                 # Store the current URL before clicking
                 original_url = driver.current_url
                 
-                # Click directly using JavaScript
+                # Click using JavaScript with retry mechanism
                 clicked = driver.execute_script("""
-                    const element = document.getElementById(arguments[0]);
-                    if (element) {
-                        element.click();
-                        return true;
+                    function clickElement(id) {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.click();
+                            return true;
+                        }
+                        return false;
+                    }
+                    
+                    // Try clicking multiple times with small delays
+                    for (let i = 0; i < 3; i++) {
+                        if (clickElement(arguments[0])) {
+                            return true;
+                        }
+                        // Small delay between attempts
+                        for (let j = 0; j < 1000000; j++) {}
                     }
                     return false;
                 """, data["id"])
@@ -217,7 +229,6 @@ def autocomplete():
                 driver.execute_script("""
                     const input = document.getElementById('myInput2');
                     if (input) {
-                        input.value = '';
                         input.value = arguments[0];
                         input.dispatchEvent(new Event('input', { bubbles: true }));
                     }
