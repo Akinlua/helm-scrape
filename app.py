@@ -161,20 +161,29 @@ def autocomplete():
                 input.value = '';
                 input.focus();
             """)
+
+            driver.execute_script("""
+                const input = document.getElementById('myInput2');
+                input.focus();
+                input.value = arguments[0];
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+                input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+            """, search_text)
             
-            # Type like a human, character by character
-            for char in search_text:
-                driver.execute_script("""
-                    const input = document.getElementById('myInput2');
-                    input.value += arguments[0];
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                    input.dispatchEvent(new KeyboardEvent('keydown', { 
-                        bubbles: true,
-                        key: arguments[0],
-                        code: 'Key' + arguments[0].toUpperCase()
-                    }));
-                """, char)
-                time.sleep(0.1)  # Small delay between characters
+            # # Type like a human, character by character
+            # for char in search_text:
+            #     driver.execute_script("""
+            #         const input = document.getElementById('myInput2');
+            #         input.value += arguments[0];
+            #         input.dispatchEvent(new Event('input', { bubbles: true }));
+            #         input.dispatchEvent(new KeyboardEvent('keydown', { 
+            #             bubbles: true,
+            #             key: arguments[0],
+            #             code: 'Key' + arguments[0].toUpperCase()
+            #         }));
+            #     """, char)
+            #     time.sleep(0.1)  # Small delay between characters
             
             print(f"Typed text attempt {retry + 1}")
             driver.save_screenshot(f"typed_search_{retry + 1}.png")
