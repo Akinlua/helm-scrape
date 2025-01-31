@@ -22,6 +22,9 @@ def setup_driver():
     options.add_argument('--log-level=3')
     options.add_argument('--disable-logging')
     options.add_argument('--disable-images')
+    options.add_argument('--disable-web-security')
+    options.add_argument('--allow-running-insecure-content')
+    options.add_argument('--disable-features=IsolateOrigins,site-per-process')
     
     # Disable unnecessary features
     prefs = {
