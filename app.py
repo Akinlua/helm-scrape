@@ -142,18 +142,17 @@ def autocomplete():
             EC.presence_of_element_located((By.ID, "myInput2"))
         )
         print("search input")
-        # search_input.click()  # Ensure focus
-        search_input.send_keys(search_text)
-        driver.save_screenshot("enterd_search.png")
-        # Use JavaScript to set the value and trigger events
-        # driver.execute_script("""
-        #     const input = document.getElementById('myInput2');
-        #     input.value = arguments[0];
-        #     input.dispatchEvent(new Event('input', { bubbles: true }));
-        #     input.dispatchEvent(new Event('change', { bubbles: true }));
-        #     input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-        #     input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-        # """, search_text)
+
+        # Clear and set initial search text using JavaScript
+        driver.execute_script("""
+            const input = document.getElementById('myInput2');
+            input.value = '';  // Clear first
+            input.value = arguments[0];
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+            input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+        """, search_text)
         print("search input send keys")
         
         # Wait for suggestions using JavaScript
@@ -254,15 +253,24 @@ def autocomplete():
                     EC.presence_of_element_located((By.ID, "myInput2"))
                 )
                 print("search input 2")
-                search_input.send_keys(search_text)
-                # driver.execute_script("""
-                #     const input = document.getElementById('myInput2');
-                #     if (input) {
-                #         input.value = arguments[0];
-                #         input.dispatchEvent(new Event('input', { bubbles: true }));
-                #     }
-                # """, search_text)
+                driver.execute_script("""
+                    const input = document.getElementById('myInput2');
+                    if (input) {
+                        input.value = '';  // Clear first
+                        input.value = arguments[0];
+                        input.focus();
+                        input.dispatchEvent(new Event('focus', { bubbles: true }));
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        input.dispatchEvent(new KeyboardEvent('keydown', { 
+                            bubbles: true,
+                            key: 'Process',
+                            code: 'Process'
+                        }));
+                    }
+                """, search_text)
                 driver.save_screenshot(f"re_enterd_search_{data['id']}.png")
+                print("re enterd search saved")
                 # wait for suggestions to show
                 WebDriverWait(driver, 60).until(
                     EC.presence_of_element_located((By.ID, 'react-autowhatever-1'))
@@ -279,6 +287,7 @@ def autocomplete():
                 
             except Exception as e:
                 print(f"Error processing suggestion '{data}': {str(e)}")
+                driver.save_screenshot(f"debug_2{data['id']}.png")
                 continue
         
         driver.quit()
