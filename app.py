@@ -312,80 +312,48 @@ def autocomplete():
                 )
                 print("search input 2")
 
-                max_retries = 3
-                for retry in range(max_retries):
-                    # Clear first
-                    driver.execute_script("""
-                        const input = document.getElementById('myInput2');
-                        input.value = '';
-                        input.focus();
-                    """)
+                # Clear and wait
+                driver.execute_script("""
+                    const input = document.getElementById('myInput2');
+                    input.value = '';
+                    input.blur();
+                """)
+                time.sleep(1)  # Wait for any cleanup
 
-                    driver.execute_script("""
-                        const input = document.getElementById('myInput2');
-                        input.focus();
-                        input.value = arguments[0];
-                        input.dispatchEvent(new Event('input', { bubbles: true }));
-                        input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-                        input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-                    """, search_text)
+                # Focus and type
+                driver.execute_script("""
+                    const input = document.getElementById('myInput2');
+                    input.focus();
+                    input.click();
+                    input.value = arguments[0];
                     
+                    // Trigger events in specific order
+                    input.dispatchEvent(new Event('focus', { bubbles: true }));
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                     
-                    print(f"Typed text attempt {retry + 1}")
-                    driver.save_screenshot(f"re_enterd_search_{data['id']}.png")
+                    // Force React to update
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                        window.HTMLInputElement.prototype, "value"
+                    ).set;
+                    nativeInputValueSetter.call(input, arguments[0]);
                     
-                    # Check if suggestions appeared
-                    try:
-                        WebDriverWait(driver, 5).until(
-                            lambda d: d.execute_script("""
-                                return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
-                                    document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
-                            """)
-                        )
-                        print("Suggestions found!")
-                        print("suggestions showed")
-                        driver.save_screenshot(f"suggestions_showed_{data['id']}.png")
-                        break
-                    except Exception as e:
-                        print(f"No suggestions on attempt {retry + 1}, retrying...")
-                        if retry == max_retries - 1:
-                            print("Failed to get suggestions after all retries")
-                            driver.quit()
-                            return jsonify({
-                                'success': False,
-                                'error': 'No suggestions found after multiple attempts'
-                            }), 404
-                # driver.execute_script("""
-                #     const input = document.getElementById('myInput2');
-                #     if (input) {
-                #         input.value = '';  // Clear first
-                #         input.value = arguments[0];
-                #         input.focus();
-                #         input.dispatchEvent(new Event('focus', { bubbles: true }));
-                #         input.dispatchEvent(new Event('input', { bubbles: true }));
-                #         input.dispatchEvent(new Event('change', { bubbles: true }));
-                #         input.dispatchEvent(new KeyboardEvent('keydown', { 
-                #             bubbles: true,
-                #             key: 'Process',
-                #             code: 'Process'
-                #         }));
-                #     }
-                # """, search_text)
-                # driver.save_screenshot(f"re_enterd_search_{data['id']}.png")
-                # print("re enterd search saved")
-                # # wait for suggestions to show
-                # WebDriverWait(driver, 60).until(
-                #     EC.presence_of_element_located((By.ID, 'react-autowhatever-1'))
-                # )
-                # print("suggestions showed")
-                # driver.save_screenshot(f"suggestions_showed_{data['id']}.png")
-                # Wait for suggestions list to reappear
-                # WebDriverWait(driver, 60).until(
-                #     lambda d: d.execute_script("""
-                #         return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
-                #                document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
-                #     """)
-                # )
+                    const ev2 = new Event('input', { bubbles: true});
+                    input.dispatchEvent(ev2);
+                """, search_text)
+
+                # Wait for suggestions and verify they match original
+                try:
+                    WebDriverWait(driver, 10).until(
+                        lambda d: d.execute_script("""
+                            const suggestions = document.querySelectorAll('.react-autosuggest__suggestions-list li');
+                            return suggestions.length >= arguments[0];
+                        """, len(suggestion_data))  # Check for same number of suggestions
+                    )
+                    print("Suggestions reloaded with same count")
+                except Exception as e:
+                    print(f"Failed to get same number of suggestions: {str(e)}")
+                    continue
                 
             except Exception as e:
                 print(f"Error processing suggestion '{data}': {str(e)}")
