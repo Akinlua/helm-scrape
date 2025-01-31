@@ -142,21 +142,31 @@ def autocomplete():
         search_input.send_keys(search_text)
         print("search input send keys")
         
-        # Wait for suggestions
-        suggestions_list = WebDriverWait(driver, 60).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
-        )
-        print("suggestions list")
+        # Wait for suggestions using JavaScript
+        try:
+            WebDriverWait(driver, 60).until(
+                lambda d: d.execute_script("""
+                    return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
+                           document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
+                """)
+            )
+            print("suggestions list")
+        except Exception as e:
+            print(f"Error waiting for suggestions: {str(e)}")
+            driver.quit()
+            return jsonify({
+                'success': False,
+                'error': 'No suggestions found'
+            }), 404
 
-        # Get all suggestions with their IDs
-        suggestions = driver.find_elements(By.CSS_SELECTOR, ".react-autosuggest__suggestions-list li")
-        print(suggestions)
-        suggestion_data = []
-        for i, suggestion in enumerate(suggestions):
-            suggestion_data.append({
-                "text": suggestion.text,
-                "id": f"react-autowhatever-1--item-{i}"
-            })
+        # Get all suggestions with their IDs using JavaScript
+        suggestion_data = driver.execute_script("""
+            const suggestions = document.querySelectorAll('.react-autosuggest__suggestions-list li');
+            return Array.from(suggestions).map((suggestion, index) => ({
+                text: suggestion.textContent,
+                id: `react-autowhatever-1--item-${index}`
+            }));
+        """)
         print(suggestion_data)
         
         results = []
@@ -165,13 +175,20 @@ def autocomplete():
                 # Store the current URL before clicking
                 original_url = driver.current_url
                 
-                # Click the suggestion using ID
-                suggestion_element = WebDriverWait(driver, 60).until(
-                    EC.element_to_be_clickable((By.ID, data["id"]))
-                )
-                print(f"data: {data}")
-                print(f"suggestion_element: {suggestion_element}")
-                suggestion_element.click()
+                # Click directly using JavaScript
+                clicked = driver.execute_script("""
+                    const element = document.getElementById(arguments[0]);
+                    if (element) {
+                        element.click();
+                        return true;
+                    }
+                    return false;
+                """, data["id"])
+                
+                if not clicked:
+                    print(f"Could not click element with ID: {data['id']}")
+                    continue
+                
                 print("clicked")
                 
                 # Wait for URL to change
@@ -196,16 +213,22 @@ def autocomplete():
                     lambda d: d.current_url == original_url
                 )
                 
-                # Wait for and re-enter search text
-                search_input = WebDriverWait(driver, 60).until(
-                    EC.presence_of_element_located((By.ID, "myInput2"))
-                )
-                search_input.clear()
-                search_input.send_keys(search_text)
+                # Re-enter search text using JavaScript
+                driver.execute_script("""
+                    const input = document.getElementById('myInput2');
+                    if (input) {
+                        input.value = '';
+                        input.value = arguments[0];
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                """, search_text)
                 
                 # Wait for suggestions list to reappear
                 WebDriverWait(driver, 60).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
+                    lambda d: d.execute_script("""
+                        return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
+                               document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
+                    """)
                 )
                 
             except Exception as e:
