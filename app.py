@@ -144,6 +144,7 @@ def autocomplete():
         print("search input")
         # search_input.click()  # Ensure focus
         search_input.send_keys(search_text)
+        driver.save_screenshot("debug.png")
         # Use JavaScript to set the value and trigger events
         # driver.execute_script("""
         #     const input = document.getElementById('myInput2');
@@ -201,7 +202,7 @@ def autocomplete():
                     }
                     
                     // Try clicking multiple times with small delays
-                    for (let i = 0; i < 3; i++) {
+                    for (let i = 0; i < 10; i++) {
                         if (clickElement(arguments[0])) {
                             return true;
                         }
@@ -213,6 +214,7 @@ def autocomplete():
                 
                 if not clicked:
                     print(f"Could not click element with ID: {data['id']}")
+                    driver.save_screenshot(f"debug_{data['id']}.png")
                     continue
                 
                 print("clicked")
