@@ -144,7 +144,7 @@ def autocomplete():
         print("search input")
         # search_input.click()  # Ensure focus
         search_input.send_keys(search_text)
-        driver.save_screenshot("debug.png")
+        driver.save_screenshot("enterd_search.png")
         # Use JavaScript to set the value and trigger events
         # driver.execute_script("""
         #     const input = document.getElementById('myInput2');
@@ -157,13 +157,21 @@ def autocomplete():
         print("search input send keys")
         
         # Wait for suggestions using JavaScript
+
+        
         try:
+            # wait for suggestions to show
             WebDriverWait(driver, 60).until(
-                lambda d: d.execute_script("""
-                    return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
-                           document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
-                """)
+                EC.presence_of_element_located((By.ID, 'react-autowhatever-1'))
             )
+            print("suggestions showed")
+            driver.save_screenshot("suggestions_showed.png")
+            # WebDriverWait(driver, 60).until(
+            #     lambda d: d.execute_script("""
+            #         return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
+            #                document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
+            #     """)
+            # )
             print("suggestions list")
         except Exception as e:
             print(f"Error waiting for suggestions: {str(e)}")
@@ -242,21 +250,32 @@ def autocomplete():
                 )
                 
                 # Re-enter search text using JavaScript
-                driver.execute_script("""
-                    const input = document.getElementById('myInput2');
-                    if (input) {
-                        input.value = arguments[0];
-                        input.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                """, search_text)
-                
-                # Wait for suggestions list to reappear
-                WebDriverWait(driver, 60).until(
-                    lambda d: d.execute_script("""
-                        return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
-                               document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
-                    """)
+                search_input = WebDriverWait(driver, 60).until(
+                    EC.presence_of_element_located((By.ID, "myInput2"))
                 )
+                print("search input 2")
+                search_input.send_keys(search_text)
+                # driver.execute_script("""
+                #     const input = document.getElementById('myInput2');
+                #     if (input) {
+                #         input.value = arguments[0];
+                #         input.dispatchEvent(new Event('input', { bubbles: true }));
+                #     }
+                # """, search_text)
+                driver.save_screenshot(f"re_enterd_search_{data['id']}.png")
+                # wait for suggestions to show
+                WebDriverWait(driver, 60).until(
+                    EC.presence_of_element_located((By.ID, 'react-autowhatever-1'))
+                )
+                print("suggestions showed")
+                driver.save_screenshot(f"suggestions_showed_{data['id']}.png")
+                # Wait for suggestions list to reappear
+                # WebDriverWait(driver, 60).until(
+                #     lambda d: d.execute_script("""
+                #         return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
+                #                document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
+                #     """)
+                # )
                 
             except Exception as e:
                 print(f"Error processing suggestion '{data}': {str(e)}")
