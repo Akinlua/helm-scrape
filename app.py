@@ -142,8 +142,16 @@ def autocomplete():
             EC.presence_of_element_located((By.ID, "myInput2"))
         )
         print("search input")
-        # search_input.click()  # Ensure focus
-        search_input.send_keys(search_text)
+
+        # Use JavaScript to set the value and trigger events
+        driver.execute_script("""
+            const input = document.getElementById('myInput2');
+            input.value = arguments[0];
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+            input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+        """, search_text)
         print("search input send keys")
         
         # Wait for suggestions using JavaScript
