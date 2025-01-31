@@ -1,3 +1,4 @@
+import time
 from flask import Flask, request, jsonify
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -154,11 +155,15 @@ def autocomplete():
             input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
         """, search_text)
         print("search input send keys")
+        driver.save_screenshot("enterd_search.png")
         
         # Wait for suggestions using JavaScript
 
         
         try:
+            print("waiting for suggestions")
+            time.sleep(10)
+            driver.save_screenshot("enterd_search_2.png")
             # wait for suggestions to show
             WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.ID, 'react-autowhatever-1'))
