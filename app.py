@@ -131,7 +131,8 @@ def autocomplete():
         print("setting")
         driver = setup_driver()
         print("driver setup")
-        driver.get('https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals')
+        url = 'https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals'
+        driver.get(url)
         print("driver get")
         
         print(driver.page_source)  # Check if content is fully loaded
