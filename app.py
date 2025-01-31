@@ -142,7 +142,7 @@ def autocomplete():
             EC.presence_of_element_located((By.ID, "myInput2"))
         )
         print("search input")
-        search_input.click()  # Ensure focus
+        # search_input.click()  # Ensure focus
         search_input.send_keys(search_text)
         print("search input send keys")
         
