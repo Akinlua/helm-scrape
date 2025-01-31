@@ -13,8 +13,8 @@ def setup_driver():
     
     # Add performance-focused arguments
     options.add_argument('--headless')  # New headless mode
-    options.add_argument("--start-maximized")
-    options.add_argument("--window-size=1920x1080")
+    options.add_argument('--window-size=1920,1080')
+    options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-infobars')
     options.add_argument('--disable-dev-shm-usage')
@@ -24,10 +24,6 @@ def setup_driver():
     options.add_argument('--log-level=3')
     options.add_argument('--disable-logging')
     options.add_argument('--disable-images')
-    # options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    # options.add_experimental_option('useAutomationExtension', False)
-    # options.add_argument('--enable-unsafe-swiftshader')
-    # options.add_argument('--ignore-gpu-blocklist')
     
     # Disable unnecessary features
     prefs = {
