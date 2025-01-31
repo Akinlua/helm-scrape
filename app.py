@@ -144,11 +144,13 @@ def autocomplete():
         )
         print("search input")
 
-        # Clear and set initial search text using JavaScript
+        # Clear and set initial search text using JavaScript with retry mechanism
         driver.execute_script("""
             const input = document.getElementById('myInput2');
             input.value = '';  // Clear first
             input.value = arguments[0];
+            input.focus();
+            input.dispatchEvent(new Event('focus', { bubbles: true }));
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
             input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
@@ -156,6 +158,36 @@ def autocomplete():
         """, search_text)
         print("search input send keys")
         driver.save_screenshot("enterd_search.png")
+
+        # Add a check and retry mechanism to ensure text stays
+        max_retries = 3
+        for retry in range(max_retries):
+            time.sleep(2)  # Short wait
+            current_value = driver.execute_script("""
+                return document.getElementById('myInput2').value;
+            """)
+            print(f"Current value: {current_value}")
+            
+            if not current_value:  # If text disappeared
+                print(f"Text disappeared, retry {retry + 1}")
+                driver.execute_script("""
+                    const input = document.getElementById('myInput2');
+                    input.value = arguments[0];
+                    input.focus();
+                    input.dispatchEvent(new Event('focus', { bubbles: true }));
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    input.dispatchEvent(new KeyboardEvent('keydown', { 
+                        bubbles: true,
+                        key: 'Process',
+                        code: 'Process'
+                    }));
+                """, search_text)
+            else:
+                print("Text remained in input")
+                break
+
+        driver.save_screenshot("enterd_search_2.png")
         
         # Wait for suggestions using JavaScript
 
@@ -163,7 +195,7 @@ def autocomplete():
         try:
             print("waiting for suggestions")
             time.sleep(10)
-            driver.save_screenshot("enterd_search_2.png")
+            driver.save_screenshot("enterd_search_3.png")
             # wait for suggestions to show
             WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.ID, 'react-autowhatever-1'))
