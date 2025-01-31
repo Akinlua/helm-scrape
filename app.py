@@ -134,6 +134,8 @@ def autocomplete():
         driver.get('https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals')
         print("driver get")
         
+        print(driver.page_source)  # Check if content is fully loaded
+
         # Wait for search input and enter text
         search_input = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.ID, "myInput2"))
