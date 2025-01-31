@@ -135,7 +135,7 @@ def autocomplete():
         print("driver get")
         
         # Wait for search input and enter text
-        search_input = WebDriverWait(driver, 10).until(
+        search_input = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.ID, "myInput2"))
         )
         print("search input")
@@ -143,7 +143,7 @@ def autocomplete():
         print("search input send keys")
         
         # Wait for suggestions
-        suggestions_list = WebDriverWait(driver, 10).until(
+        suggestions_list = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
         )
         print("suggestions list")
@@ -166,18 +166,18 @@ def autocomplete():
                 suggestion_driver.get('https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals')
                 
                 # Wait for and enter search text
-                search_input = WebDriverWait(suggestion_driver, 10).until(
+                search_input = WebDriverWait(suggestion_driver, 60).until(
                     EC.presence_of_element_located((By.ID, "myInput2"))
                 )
                 search_input.send_keys(search_text)
                 
                 # Wait for suggestions list
-                WebDriverWait(suggestion_driver, 10).until(
+                WebDriverWait(suggestion_driver, 60).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
                 )
                 
                 # Click directly on the matching suggestion using ID
-                suggestion_element = WebDriverWait(suggestion_driver, 10).until(
+                suggestion_element = WebDriverWait(suggestion_driver, 60).until(
                     EC.element_to_be_clickable((By.ID, data["id"]))
                 )
                 print(f"data: {data}")
