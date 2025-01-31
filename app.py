@@ -148,11 +148,17 @@ def autocomplete():
         )
         print("suggestions list")
 
-        # Get all suggestions
+        # Get all suggestions with their IDs
         suggestions = driver.find_elements(By.CSS_SELECTOR, ".react-autosuggest__suggestions-list li")
-        print(suggestions)
-        def process_suggestion(text):
-            print(text)
+        suggestion_data = []
+        for i, suggestion in enumerate(suggestions):
+            suggestion_data.append({
+                "text": suggestion.text,
+                "id": f"react-autowhatever-1--item-{i}"
+            })
+        print(suggestion_data)
+        
+        def process_suggestion(data):
             try:
                 print("setting suggestion driver")
                 suggestion_driver = setup_driver()
@@ -170,25 +176,27 @@ def autocomplete():
                     EC.presence_of_element_located((By.CLASS_NAME, "react-autosuggest__suggestions-list"))
                 )
                 
-                # Click directly on the matching suggestion
+                # Click directly on the matching suggestion using ID
                 suggestion_element = WebDriverWait(suggestion_driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, f"//li[normalize-space()='{text}']"))
+                    EC.element_to_be_clickable((By.ID, data["id"]))
                 )
+                print(f"data: {data}")
                 print(f"suggestion_element: {suggestion_element}")
                 suggestion_element.click()
                 print("clicked")
                 
                 # Get URL after click
                 current_url = suggestion_driver.current_url
+                print(f"current_url: {current_url}")
                 suggestion_driver.quit()
                 print("driver quit")
                 return {
-                    "text": text,
+                    "text": data["text"],
                     "link": current_url
                 }
                 
             except Exception as e:
-                print(f"Error processing suggestion '{text}': {str(e)}")
+                print(f"Error processing suggestion '{data}': {str(e)}")
                 if 'suggestion_driver' in locals():
                     suggestion_driver.quit()
                 return None
@@ -196,7 +204,7 @@ def autocomplete():
         # Process suggestions in parallel
         results = []
         with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(process_suggestion, suggestion.text) for suggestion in suggestions]
+            futures = [executor.submit(process_suggestion, data) for data in suggestion_data]
             for future in futures:
                 result = future.result()
                 if result:
