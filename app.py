@@ -238,10 +238,10 @@ def autocomplete():
 def get_suggestion_link():
     data = request.json
     suggestion_id = data.get('id')
-    suggestion_text = data.get('text')
+    # suggestion_text = data.get('text')
     search_text = data.get('search_text')
     
-    if not all([suggestion_id, suggestion_text, search_text]):
+    if not all([suggestion_id, search_text]):
         return jsonify({'error': 'id, text, and search_text are required'}), 400
         
     try:
@@ -267,13 +267,29 @@ def get_suggestion_link():
         print("search input")
 
         # Enter search text to get suggestions
+        # driver.execute_script("""
+        #     const input = document.getElementById('myInput2');
+        #     input.value = arguments[0];
+        #     input.focus();
+        #     input.dispatchEvent(new Event('focus', { bubbles: true }));
+        #     input.dispatchEvent(new Event('input', { bubbles: true }));
+        #     input.dispatchEvent(new Event('change', { bubbles: true }));
+        # """, search_text)
+
+        # Clear first
         driver.execute_script("""
             const input = document.getElementById('myInput2');
-            input.value = arguments[0];
+            input.value = '';
             input.focus();
-            input.dispatchEvent(new Event('focus', { bubbles: true }));
+        """)
+
+        driver.execute_script("""
+            const input = document.getElementById('myInput2');
+            input.focus();
+            input.value = arguments[0];
             input.dispatchEvent(new Event('input', { bubbles: true }));
-            input.dispatchEvent(new Event('change', { bubbles: true }));
+            input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+            input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
         """, search_text)
         
         # Wait for suggestions
@@ -287,14 +303,35 @@ def get_suggestion_link():
             
             # Click the specific suggestion
             original_url = driver.current_url
+            # Click using JavaScript with retry mechanism
             clicked = driver.execute_script("""
-                const element = document.getElementById(arguments[0]);
-                if (element && element.textContent === arguments[1]) {
-                    element.click();
-                    return true;
+                function clickElement(id) {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.click();
+                        return true;
+                    }
+                    return false;
+                }
+                
+                // Try clicking multiple times with small delays
+                for (let i = 0; i < 10; i++) {
+                    if (clickElement(arguments[0])) {
+                        return true;
+                    }
+                    // Small delay between attempts
+                    for (let j = 0; j < 1000000; j++) {}
                 }
                 return false;
-            """, suggestion_id, suggestion_text)
+            """, suggestion_id)
+            # clicked = driver.execute_script("""
+            #     const element = document.getElementById(arguments[0]);
+            #     if (element && element.textContent === arguments[1]) {
+            #         element.click();
+            #         return true;
+            #     }
+            #     return false;
+            # """, suggestion_id, suggestion_text)
             
             if not clicked:
                 driver.quit()
@@ -314,7 +351,6 @@ def get_suggestion_link():
             
             return jsonify({
                 'success': True,
-                'text': suggestion_text,
                 'link': final_url
             })
             
