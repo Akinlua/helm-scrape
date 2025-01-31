@@ -135,7 +135,7 @@ def autocomplete():
         driver.get(url)
         print("driver get")
         
-        print(driver.page_source)  # Check if content is fully loaded
+        # print(driver.page_source)  # Check if content is fully loaded
 
         # Wait for search input and enter text
         search_input = WebDriverWait(driver, 60).until(
@@ -156,6 +156,7 @@ def autocomplete():
             print("suggestions list")
         except Exception as e:
             print(f"Error waiting for suggestions: {str(e)}")
+            driver.save_screenshot("debug.png")
             driver.quit()
             return jsonify({
                 'success': False,
