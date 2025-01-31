@@ -23,7 +23,6 @@ def setup_driver():
     options.add_argument('--disable-logging')
     options.add_argument('--disable-images')
     options.add_argument("window-size=1920x1080")
-    options.add_argument("--headless")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
     
