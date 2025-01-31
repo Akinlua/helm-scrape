@@ -150,6 +150,7 @@ def autocomplete():
 
         # Get all suggestions with their IDs
         suggestions = driver.find_elements(By.CSS_SELECTOR, ".react-autosuggest__suggestions-list li")
+        print(suggestions)
         suggestion_data = []
         for i, suggestion in enumerate(suggestions):
             suggestion_data.append({
