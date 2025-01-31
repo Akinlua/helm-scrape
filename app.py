@@ -10,6 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import os
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor
+from selenium_stealth import stealth
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -131,6 +132,14 @@ def autocomplete():
     try:
         print("setting")
         driver = setup_driver()
+        stealth(driver,
+            languages=["en-US", "en"],
+            vendor="Google Inc.",
+            platform="Win32",
+            webgl_vendor="Intel Inc.",
+            renderer="Intel Iris OpenGL Engine",
+            fix_hairline=True,
+        )
         print("driver setup")
         url = 'https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals'
         driver.get(url)
