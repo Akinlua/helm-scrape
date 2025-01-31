@@ -12,7 +12,7 @@ def setup_driver():
     options = webdriver.ChromeOptions()
     
     # Add performance-focused arguments
-    # options.add_argument('--headless=new')  # New headless mode
+    options.add_argument('--headless=new')  # New headless mode
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-infobars')
     options.add_argument('--disable-dev-shm-usage')
