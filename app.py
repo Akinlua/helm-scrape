@@ -48,7 +48,7 @@ def nadlan_deals():
         return jsonify({'success': False, 'error': str(e)}), 500
     
 
-@app.route('/nadlan-deals', methods=['POST'])
+@app.route('/nadlan-deals-dynamic', methods=['POST'])
 def nadlan_deals():
     data = request.json
     url = data.get('url')
