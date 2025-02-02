@@ -67,13 +67,13 @@ def scrape_nadlan_deals(url, page=None):
         print("Starting scrape...")
         
         # Wait for initial table load
-        WebDriverWait(driver, 30).until(
+        WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'table'))
         )
 
         print("Table found...")
 
-        header_html = WebDriverWait(driver, 30).until(
+        header_html = WebDriverWait(driver, 10).until(
             lambda d: d.execute_script(
                 """
                 // Get all sections with class "transactionsSection"
