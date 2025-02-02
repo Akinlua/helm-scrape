@@ -76,8 +76,8 @@ def scrape_nadlan_deals(url, page=None):
         header_html = WebDriverWait(driver, 180).until(
             lambda d: d.execute_script(
                 """
-                // Get all sections with class "transactionsection"
-                const sections = Array.from(document.querySelectorAll('.transactionsection'));
+                // Get all sections with class "transactionsSection"
+                const sections = Array.from(document.querySelectorAll('.transactionsSection'));
                 // Filter out any section that is wrapped by a div with "display: none"
                 const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
                 if (!visibleSection) return null;
@@ -95,7 +95,7 @@ def scrape_nadlan_deals(url, page=None):
 
         # Define a JS snippet to extract rows from the visible transaction section.
         extract_rows_script = """
-            const sections = Array.from(document.querySelectorAll('.transactionsection'));
+            const sections = Array.from(document.querySelectorAll('.transactionsSection'));
             const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
             if (!visibleSection) return "";
             const table = visibleSection.querySelector('table#dealsTable.mainTable');
@@ -140,7 +140,7 @@ def scrape_nadlan_deals(url, page=None):
             WebDriverWait(driver, 180).until(
                 lambda d: d.execute_script(
                     """
-                    const sections = Array.from(document.querySelectorAll('.transactionsection'));
+                    const sections = Array.from(document.querySelectorAll('.transactionsSection'));
                     const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
                     if (!visibleSection) return false;
                     const table = visibleSection.querySelector('table#dealsTable.mainTable');
@@ -197,7 +197,7 @@ def scrape_nadlan_deals(url, page=None):
                     WebDriverWait(driver, 180).until(
                         lambda d: d.execute_script(
                             """
-                            const sections = Array.from(document.querySelectorAll('.transactionsection'));
+                            const sections = Array.from(document.querySelectorAll('.transactionsSection'));
                             const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
                             if (!visibleSection) return false;
                             const table = visibleSection.querySelector('table#dealsTable.mainTable');
