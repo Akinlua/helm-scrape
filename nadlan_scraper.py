@@ -256,7 +256,7 @@ def scrape_nadlan_deals(url, page=None):
         else:
             current_page = 1
             page_rows_html = ""
-            while current_page < 100:
+            while current_page < int(total_pages):
                 print(f"Navigating to page {current_page}...")
                 try:
                     # Wait for table content to update
@@ -325,7 +325,7 @@ def scrape_nadlan_deals(url, page=None):
             'success': True,
             'table_html': final_table_html,
             'page': page if page is not None else 0,
-            'total_pages': 100
+            'total_pages': total_pages
         }
         
     except Exception as e:
