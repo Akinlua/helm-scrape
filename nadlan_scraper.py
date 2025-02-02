@@ -152,25 +152,32 @@ def scrape_nadlan_deals(url, page=None):
                     break
 
             # Wait until rows are present in the visible table
-            WebDriverWait(driver, 30).until(
-                lambda d: d.execute_script(
-                    """
-                    const sections = Array.from(document.querySelectorAll('.transactionsSection'));
-                    const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
-                    if (!visibleSection) return false;
-                    const table = visibleSection.querySelector('table#dealsTable.mainTable');
-                    return table && table.querySelectorAll('tbody tr').length > 0;
-                    """
+            try:
+                print("checks")
+                WebDriverWait(driver, 30).until(
+                    lambda d: d.execute_script(
+                        """
+                        const sections = Array.from(document.querySelectorAll('.transactionsSection'));
+                        const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
+                        if (!visibleSection) return false;
+                        const table = visibleSection.querySelector('table#dealsTable.mainTable');
+                        return table && table.querySelectorAll('tbody tr').length > 0;
+                        """
+                    )
                 )
-            )
-            # # Wait for table content to update
-            # WebDriverWait(driver, 30).until(
-            #     lambda d: d.execute_script("""
-            #         return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
-            #     """)
-            # )
-            time.sleep(1)
-
+                # # Wait for table content to update
+                # WebDriverWait(driver, 30).until(
+                #     lambda d: d.execute_script("""
+                #         return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
+                #     """)
+                # )
+                time.sleep(1)
+            except Exception as wait_error:
+                page_source_snippet = driver.page_source[:1000]
+                print("Error waiting for rows. Page source snippet:")
+                print(page_source_snippet)
+                raise wait_error
+            
             # Get the rows from the current page
             try:
                 # page_rows_html = driver.execute_script("""
