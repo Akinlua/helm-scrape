@@ -147,7 +147,7 @@ def scrape_nadlan_deals(url, page=None):
         def get_next_button(driver):
             return driver.execute_script(
                 """
-                const sections = Array.from(document.querySelectorAll('.transactionsection'));
+                const sections = Array.from(document.querySelectorAll('.transactionsSection'));
                 const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
                 if (!visibleSection) return null;
                 return visibleSection.querySelector('ul[data-v-26d3d030].pagination #next:not([disabled])');
@@ -162,10 +162,10 @@ def scrape_nadlan_deals(url, page=None):
                 print("Navigating to next page...")
                 try:
                     # Wait for next button to be clickable
-                    # next_button = WebDriverWait(driver, 5).until(lambda d: get_next_button(d))
-                    next_button = WebDriverWait(driver, 5).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
-                    )
+                    next_button = WebDriverWait(driver, 5).until(lambda d: get_next_button(d))
+                    # next_button = WebDriverWait(driver, 5).until(
+                    #     EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
+                    # )
                     print("Next button found...")
                     print(next_button)
                     
