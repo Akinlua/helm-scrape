@@ -67,13 +67,13 @@ def scrape_nadlan_deals(url, page=None):
         print("Starting scrape...")
         
         # Wait for initial table load
-        WebDriverWait(driver, 180).until(
+        WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'table'))
         )
 
         print("Table found...")
 
-        header_html = WebDriverWait(driver, 180).until(
+        header_html = WebDriverWait(driver, 30).until(
             lambda d: d.execute_script(
                 """
                 // Get all sections with class "transactionsSection"
@@ -87,7 +87,7 @@ def scrape_nadlan_deals(url, page=None):
             )
         )
 
-        # header_html = WebDriverWait(driver, 180).until(
+        # header_html = WebDriverWait(driver, 30).until(
         #     EC.presence_of_element_located((By.CSS_SELECTOR, 'table thead tr'))
         # ).get_attribute('outerHTML')
         
@@ -152,7 +152,7 @@ def scrape_nadlan_deals(url, page=None):
                     break
 
             # Wait until rows are present in the visible table
-            WebDriverWait(driver, 180).until(
+            WebDriverWait(driver, 30).until(
                 lambda d: d.execute_script(
                     """
                     const sections = Array.from(document.querySelectorAll('.transactionsSection'));
@@ -164,7 +164,7 @@ def scrape_nadlan_deals(url, page=None):
                 )
             )
             # # Wait for table content to update
-            # WebDriverWait(driver, 180).until(
+            # WebDriverWait(driver, 30).until(
             #     lambda d: d.execute_script("""
             #         return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
             #     """)
@@ -202,14 +202,14 @@ def scrape_nadlan_deals(url, page=None):
                 print(f"Navigating to page {current_page}...")
                 try:
                     # Wait for table content to update
-                    # WebDriverWait(driver, 180).until(
+                    # WebDriverWait(driver, 30).until(
                     #     lambda d: d.execute_script("""
                     #         return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
                     #     """)
                     # )
                     
                      # Wait until rows are present in the visible table
-                    WebDriverWait(driver, 180).until(
+                    WebDriverWait(driver, 30).until(
                         lambda d: d.execute_script(
                             """
                             const sections = Array.from(document.querySelectorAll('.transactionsSection'));
