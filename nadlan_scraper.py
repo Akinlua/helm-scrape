@@ -160,8 +160,8 @@ def scrape_nadlan_deals(url, page=None):
                         const sections = Array.from(document.querySelectorAll('.transactionsSection'));
                         const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
                         if (!visibleSection) return false;
-                        const table = visibleSection.querySelector('table#dealsTable.mainTable');
-                        return table && table.querySelectorAll('tbody tr').length > 0;
+                        const table = visibleSection.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
+                        return table;
                         """
                     )
                 )
