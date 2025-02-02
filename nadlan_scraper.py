@@ -74,10 +74,44 @@ def scrape_nadlan_deals(url, page=None):
         print("Table found...")
 
         header_html = WebDriverWait(driver, 180).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'table thead tr'))
-        ).get_attribute('outerHTML')
+            lambda d: d.execute_script(
+                """
+                // Get all sections with class "transactionsection"
+                const sections = Array.from(document.querySelectorAll('.transactionsection'));
+                // Filter out any section that is wrapped by a div with "display: none"
+                const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
+                if (!visibleSection) return null;
+                const header = visibleSection.querySelector('table#dealsTable.mainTable thead tr');
+                return header ? header.outerHTML : null;
+                """
+            )
+        )
+
+        # header_html = WebDriverWait(driver, 180).until(
+        #     EC.presence_of_element_located((By.CSS_SELECTOR, 'table thead tr'))
+        # ).get_attribute('outerHTML')
         
         print(f"Header HTML: {header_html[:100]}...")
+
+        # Define a JS snippet to extract rows from the visible transaction section.
+        extract_rows_script = """
+            const sections = Array.from(document.querySelectorAll('.transactionsection'));
+            const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
+            if (!visibleSection) return "";
+            const table = visibleSection.querySelector('table#dealsTable.mainTable');
+            if (!table) return "";
+            const rows = table.querySelectorAll('tbody tr');
+            return Array.from(rows).map(row => {
+                const cells = row.querySelectorAll('td');
+                // Remove any cell with class 'trend-summary' except the last one
+                for (let i = 0; i < cells.length - 1; i++) {
+                    if (cells[i].classList.contains('trend-summary')) {
+                        cells[i].remove();
+                    }
+                }
+                return row.outerHTML;
+            }).join('');
+        """
         
         # If specific page is requested, navigate to that page
         if page is not None and page > 0:
@@ -101,28 +135,42 @@ def scrape_nadlan_deals(url, page=None):
                 except Exception as e:
                     print(f"Navigation error: {str(e)}")
                     break
-            # Wait for table content to update
+
+            # Wait until rows are present in the visible table
             WebDriverWait(driver, 180).until(
-                lambda d: d.execute_script("""
-                    return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
-                """)
+                lambda d: d.execute_script(
+                    """
+                    const sections = Array.from(document.querySelectorAll('.transactionsection'));
+                    const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
+                    if (!visibleSection) return false;
+                    const table = visibleSection.querySelector('table#dealsTable.mainTable');
+                    return table && table.querySelectorAll('tbody tr').length > 0;
+                    """
+                )
             )
+            # # Wait for table content to update
+            # WebDriverWait(driver, 180).until(
+            #     lambda d: d.execute_script("""
+            #         return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
+            #     """)
+            # )
             time.sleep(1)
 
             # Get the rows from the current page
             try:
-                page_rows_html = driver.execute_script("""
-                    const rows = document.querySelectorAll('table#dealsTable.mainTable tbody tr');
-                    return Array.from(rows).map(row => {
-                        const cells = row.querySelectorAll('td');
-                        for (let i = 0; i < cells.length - 1; i++) {
-                            if (cells[i].classList.contains('trend-summary')) {
-                                cells[i].remove();
-                            }
-                        }
-                        return row.outerHTML;
-                    }).join('');
-                """)
+                # page_rows_html = driver.execute_script("""
+                #     const rows = document.querySelectorAll('table#dealsTable.mainTable tbody tr');
+                #     return Array.from(rows).map(row => {
+                #         const cells = row.querySelectorAll('td');
+                #         for (let i = 0; i < cells.length - 1; i++) {
+                #             if (cells[i].classList.contains('trend-summary')) {
+                #                 cells[i].remove();
+                #             }
+                #         }
+                #         return row.outerHTML;
+                #     }).join('');
+                # """)
+                page_rows_html = driver.execute_script(extract_rows_script)
                 
                 print(f"Rows HTML length: {len(page_rows_html)}")
                 
@@ -139,24 +187,38 @@ def scrape_nadlan_deals(url, page=None):
                 print(f"Navigating to page {current_page}...")
                 try:
                     # Wait for table content to update
-                    WebDriverWait(driver, 180).until(
-                        lambda d: d.execute_script("""
-                            return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
-                        """)
-                    )
+                    # WebDriverWait(driver, 180).until(
+                    #     lambda d: d.execute_script("""
+                    #         return document.querySelectorAll('table#dealsTable.mainTable tbody tr').length > 0;
+                    #     """)
+                    # )
                     
-                    page_rows_html += driver.execute_script("""
-                        const rows = document.querySelectorAll('table#dealsTable.mainTable tbody tr');
-                        return Array.from(rows).map(row => {
-                            const cells = row.querySelectorAll('td');
-                            for (let i = 0; i < cells.length - 1; i++) {
-                                if (cells[i].classList.contains('trend-summary')) {
-                                    cells[i].remove();
-                                }
-                            }
-                            return row.outerHTML;
-                        }).join('');
-                    """)
+                     # Wait until rows are present in the visible table
+                    WebDriverWait(driver, 180).until(
+                        lambda d: d.execute_script(
+                            """
+                            const sections = Array.from(document.querySelectorAll('.transactionsection'));
+                            const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
+                            if (!visibleSection) return false;
+                            const table = visibleSection.querySelector('table#dealsTable.mainTable');
+                            return table && table.querySelectorAll('tbody tr').length > 0;
+                            """
+                        )
+                    )
+                    # page_rows_html += driver.execute_script("""
+                    #     const rows = document.querySelectorAll('table#dealsTable.mainTable tbody tr');
+                    #     return Array.from(rows).map(row => {
+                    #         const cells = row.querySelectorAll('td');
+                    #         for (let i = 0; i < cells.length - 1; i++) {
+                    #             if (cells[i].classList.contains('trend-summary')) {
+                    #                 cells[i].remove();
+                    #             }
+                    #         }
+                    #         return row.outerHTML;
+                    #     }).join('');
+                    # """)
+                    # Append the current page rows from the visible table
+                    page_rows_html += driver.execute_script(extract_rows_script)
                     
                     # Wait for next button to be clickable
                     next_button = WebDriverWait(driver, 10).until(
