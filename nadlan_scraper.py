@@ -129,12 +129,15 @@ def scrape_nadlan_deals(url, page=None):
             print(f"Navigating to page {page}...")
             current_page = 1
             while current_page < page:
+                print("Navigating to next page...")
                 try:
                     # Wait for next button to be clickable
                     next_button = WebDriverWait(driver, 10).until(lambda d: get_next_button(d))
                     # next_button = WebDriverWait(driver, 10).until(
                     #     EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
                     # )
+                    print("Next button found...")
+                    print(next_button)
                     
                     # Scroll the button into view
                     driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
