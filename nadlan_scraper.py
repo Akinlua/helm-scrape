@@ -158,7 +158,7 @@ def scrape_nadlan_deals(url, page=None):
             # Wait until rows are present in the visible table
             try:
                 print("checks")
-                WebDriverWait(driver, 30).until(
+                WebDriverWait(driver, 5).until(
                     lambda d: d.execute_script(
                         """
                         const sections = Array.from(document.querySelectorAll('.transactionsSection'));
@@ -180,7 +180,11 @@ def scrape_nadlan_deals(url, page=None):
                 page_source_snippet = driver.page_source[:1000]
                 print("Error waiting for rows. Page source snippet:")
                 print(page_source_snippet)
-                raise wait_error
+                return {
+                    'success': False,
+                    'error': "No row found"
+                } 
+                # raise wait_error
             
             # Get the rows from the current page
             try:
@@ -201,11 +205,19 @@ def scrape_nadlan_deals(url, page=None):
                 print(f"Rows HTML length: {len(page_rows_html)}")
                 
                 if not page_rows_html:
-                    raise Exception("No rows found on page")
+                    return {
+                        'success': False,
+                        'error': "No row found"
+                    }    
+                    # raise Exception("No rows found on page")
                     
             except Exception as e:
                 print(f"Row extraction error: {str(e)}")
-                raise e
+                return {
+                    'success': False,
+                    'error': "No row found"
+                } 
+                # raise e
         else:
             current_page = 1
             page_rows_html = ""
@@ -220,7 +232,7 @@ def scrape_nadlan_deals(url, page=None):
                     # )
                     
                      # Wait until rows are present in the visible table
-                    WebDriverWait(driver, 30).until(
+                    WebDriverWait(driver, 5).until(
                         lambda d: d.execute_script(
                             """
                             const sections = Array.from(document.querySelectorAll('.transactionsSection'));
@@ -247,7 +259,7 @@ def scrape_nadlan_deals(url, page=None):
                     page_rows_html += driver.execute_script(extract_rows_script)
                     
                     # Wait for next button to be clickable
-                    next_button = WebDriverWait(driver, 10).until(lambda d: get_next_button(d))
+                    next_button = WebDriverWait(driver, 5).until(lambda d: get_next_button(d))
                     # next_button = WebDriverWait(driver, 10).until(
                     #     EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
                     # )
@@ -262,6 +274,10 @@ def scrape_nadlan_deals(url, page=None):
                     
                 except Exception as e:
                     print(f"Navigation error: {str(e)}")
+                    return {
+                        'success': False,
+                        'error': "No row found"
+                    } 
                     break 
         
 
