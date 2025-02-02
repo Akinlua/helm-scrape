@@ -99,14 +99,12 @@ def scrape_nadlan_deals(url, page=None):
                 // Get all sections with class "transactionsSection"
                 const sections = Array.from(document.querySelectorAll('.transactionsSection'));
                 // Find the first section whose computed style is not "none"
-                const visibleSection = sections.find(sec => window.getComputedStyle(sec).display !== 'none');
+                const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
                 if (!visibleSection) return 0;
                 // Look inside the visible section for the table with the deals
-                const table = visibleSection.querySelector('table#dealsTable.mainTable');
-                if (!table) return 0;
-                // Now, find the pagination element within that table
-                const paginate = table.querySelector('.paginate');
+                const paginate = visibleSection.querySelector('.paginate');
                 if (!paginate) return 0;
+
                 // Safely get the text content
                 const text = paginate.textContent || "";
                 // Assume text is in the form "1 / 5537"
