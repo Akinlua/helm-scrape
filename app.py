@@ -20,8 +20,13 @@ app = Flask(__name__)
 def nadlan_deals():
     display = request.args.get('display', 'false')
     page = request.args.get('page')
+    url = request.args.get('url')
     print(page)
-    url = 'https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals'
+    if url: 
+        url = url
+    else:
+        url = 'https://www.nadlan.gov.il/?view=neighborhood&id=65210148&page=deals'
+
     
     try:
         # Convert page to integer if it exists
