@@ -93,34 +93,36 @@ def scrape_nadlan_deals(url, page=None):
         
         print(f"Header HTML: {header_html[:100]}...")
 
-        # Example snippet to extract total pages from the visible pagination element
-        # total_pages = WebDriverWait(driver, 10).until(
-        #     lambda d: d.execute_script(
-        #         """
-        #         // Get all pagination elements with class "paginate"
-        #         const sections = Array.from(document.querySelectorAll('.transactionsSection'));
-        #         const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
-        #         if (!visibleSection) return "";
-        #         const table = visibleSection.querySelector('table#dealsTable.mainTable');
-        #         if (!table) return 0;
-        #         const paginations = table.querySelectorAll('.paginate');
-        #         const paginate = paginations[0]
-               
-        #         // Assume the text is of the form "1 / 5537"
-        #         const text = paginate.textContent || "";
-        #         const parts = text.split('/');
-        #         if (parts.length < 2) return null;
-        #         // Parse the total pages (e.g. "5537")
-        #         const total = parseInt(parts[1].trim(), 10);
-        #         return total;
-        #         """
-        #     )
-        # )
+        total_pages = WebDriverWait(driver, 10).until(
+            lambda d: d.execute_script(
+                """
+                // Get all sections with class "transactionsSection"
+                const sections = Array.from(document.querySelectorAll('.transactionsSection'));
+                // Find the first section whose computed style is not "none"
+                const visibleSection = sections.find(sec => window.getComputedStyle(sec).display !== 'none');
+                if (!visibleSection) return 0;
+                // Look inside the visible section for the table with the deals
+                const table = visibleSection.querySelector('table#dealsTable.mainTable');
+                if (!table) return 0;
+                // Now, find the pagination element within that table
+                const paginate = table.querySelector('.paginate');
+                if (!paginate) return 0;
+                // Safely get the text content
+                const text = paginate.textContent || "";
+                // Assume text is in the form "1 / 5537"
+                const parts = text.split('/');
+                if (parts.length < 2) return 0;
+                // Parse and return the total pages (e.g., "5537")
+                return parseInt(parts[1].trim(), 10);
+                """
+            )
+        )
 
-        # if total_pages is None:
-        #     print("Could not find the total pages.")
-        # else:
-        #     print("Total pages:", total_pages)
+        if total_pages == 0:
+            print("Could not find the total pages.")
+        else:
+            print("Total pages:", total_pages)
+
 
 
         # Define a JS snippet to extract rows from the visible transaction section.
