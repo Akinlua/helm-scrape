@@ -92,7 +92,7 @@ def scrape_nadlan_deals(url, page=None):
         # ).get_attribute('outerHTML')
         
         print(f"Header HTML: {header_html[:100]}...")
-
+        total_pages = 100
         try:
             total_pages = WebDriverWait(driver, 10).until(
                 lambda d: d.execute_script(
