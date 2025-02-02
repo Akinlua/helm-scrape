@@ -163,7 +163,7 @@ def scrape_nadlan_deals(url, page=None):
                 try:
                     # Wait for next button to be clickable
                     # next_button = WebDriverWait(driver, 5).until(lambda d: get_next_button(d))
-                    next_button = WebDriverWait(driver, 10).until(
+                    next_button = WebDriverWait(driver, 5).until(
                         EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
                     )
                     print("Next button found...")
