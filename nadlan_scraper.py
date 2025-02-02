@@ -132,7 +132,7 @@ def scrape_nadlan_deals(url, page=None):
                 print("Navigating to next page...")
                 try:
                     # Wait for next button to be clickable
-                    next_button = WebDriverWait(driver, 10).until(lambda d: get_next_button(d))
+                    next_button = WebDriverWait(driver, 5).until(lambda d: get_next_button(d))
                     # next_button = WebDriverWait(driver, 10).until(
                     #     EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
                     # )
@@ -149,7 +149,11 @@ def scrape_nadlan_deals(url, page=None):
                     
                 except Exception as e:
                     print(f"Navigation error: {str(e)}")
-                    break
+                    # break
+                    return {
+                        'success': False,
+                        'error': "No page found"
+                    } 
 
             # Wait until rows are present in the visible table
             try:
