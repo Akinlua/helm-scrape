@@ -92,7 +92,7 @@ def scrape_nadlan_deals(url, page=None):
         # ).get_attribute('outerHTML')
         
         print(f"Header HTML: {header_html[:100]}...")
-        total_pages = 100
+        total_pages = 0
         try:
             total_pages = WebDriverWait(driver, 10).until(
                 lambda d: d.execute_script(
@@ -185,10 +185,13 @@ def scrape_nadlan_deals(url, page=None):
                 except Exception as e:
                     print(f"Navigation error: {str(e)}")
                     # break
+                    final_table_html = f'<table>{header_html}</table>'
                     return {
-                        'success': False,
-                        'error': "No page found"
-                    } 
+                        'success': True,
+                        'table_html': final_table_html,
+                        'page': page if page is not None else 0,
+                        'total_pages': total_pages
+                    }
 
             # Wait until rows are present in the visible table
             try:
@@ -215,10 +218,13 @@ def scrape_nadlan_deals(url, page=None):
                 page_source_snippet = driver.page_source[:1000]
                 print("Error waiting for rows. Page source snippet:")
                 print(page_source_snippet)
+                final_table_html = f'<table>{header_html}</table>'
                 return {
-                    'success': False,
-                    'error': "No row found"
-                } 
+                    'success': True,
+                    'table_html': final_table_html,
+                    'page': page if page is not None else 0,
+                    'total_pages': total_pages
+                }
                 # raise wait_error
             
             # Get the rows from the current page
@@ -240,18 +246,24 @@ def scrape_nadlan_deals(url, page=None):
                 print(f"Rows HTML length: {len(page_rows_html)}")
                 
                 if not page_rows_html:
+                    final_table_html = f'<table>{header_html}</table>'
                     return {
-                        'success': False,
-                        'error': "No row found"
-                    }    
+                        'success': True,
+                        'table_html': final_table_html,
+                        'page': page if page is not None else 0,
+                        'total_pages': total_pages
+                    }
                     # raise Exception("No rows found on page")
                     
             except Exception as e:
                 print(f"Row extraction error: {str(e)}")
+                final_table_html = f'<table>{header_html}</table>'
                 return {
-                    'success': False,
-                    'error': "No row found"
-                } 
+                    'success': True,
+                    'table_html': final_table_html,
+                    'page': page if page is not None else 0,
+                    'total_pages': total_pages
+                }
                 # raise e
         else:
             current_page = 1
@@ -309,10 +321,13 @@ def scrape_nadlan_deals(url, page=None):
                     
                 except Exception as e:
                     print(f"Navigation error: {str(e)}")
+                    final_table_html = f'<table>{header_html}</table>'
                     return {
-                        'success': False,
-                        'error': "No row found"
-                    } 
+                        'success': True,
+                        'table_html': final_table_html,
+                        'page': page if page is not None else 0,
+                        'total_pages': total_pages
+                    }
                     break 
         
 
