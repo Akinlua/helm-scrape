@@ -123,7 +123,6 @@ def scrape_nadlan_deals(url, page=None):
                 print("Total pages:", total_pages)
         except:
             print("Could not find the total pages.")
-            print(e)
 
 
 
