@@ -243,7 +243,7 @@ def autocomplete():
             suggestion_data = driver.execute_script("""
                 const suggestions = document.querySelectorAll('.react-autosuggest__suggestions-list li');
                 return Array.from(suggestions).map(suggestion => ({
-                    text: suggestion.textContent,
+                    text: suggestion.querySelector('.location').textContent,
                     id: suggestion.getAttribute('id')
                 }));
             """)
