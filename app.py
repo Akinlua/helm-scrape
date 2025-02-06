@@ -389,10 +389,22 @@ def get_suggestion_link():
             # Wait for either URL change OR content update
             WebDriverWait(driver, 10).until(
                 lambda d: d.current_url != original_url or d.execute_script("""
-                    // Check if the page content has been updated
-                    const mainContent = document.querySelector('.main-content');
-                    return mainContent && mainContent.getAttribute('data-loaded') === 'true';
-                """)
+                    // Check multiple indicators of content update
+                    const mainContent = document.querySelector('.content');
+                    const dealsTable = document.querySelector('#dealsTable');
+                    const loadingSpinner = document.querySelector('.loader-svg');
+                    
+                    return (
+                        // Either URL changed
+                        window.location.href !== arguments[0] ||
+                        // Or content is clearly loaded
+                        (dealsTable && dealsTable.rows.length > 1) ||
+                        // Or loading indicator is gone
+                        !loadingSpinner ||
+                        // Or main content is marked as loaded
+                        (mainContent && mainContent.getAttribute('data-loaded') === 'true')
+                    );
+                """, original_url)
             )
             
             # Short pause to ensure complete load
