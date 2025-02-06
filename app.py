@@ -329,12 +329,17 @@ def get_suggestion_link():
         
         # Wait for suggestions
         try:
+            driver.save_screenshot("suggestion1.png")
+
             WebDriverWait(driver, 10).until(
                 lambda d: d.execute_script("""
                     return document.querySelector('.react-autosuggest__suggestions-list') !== null &&
                            document.querySelectorAll('.react-autosuggest__suggestions-list li').length > 0;
                 """)
             )
+            driver.save_screenshot("suggestion2.png")
+
+            print("found suggestion list")
             
             # Click the specific suggestion
             original_url = driver.current_url
@@ -359,6 +364,10 @@ def get_suggestion_link():
                 }
                 return false;
             """, suggestion_id)
+            print("clicked suggestion id")
+            driver.save_screenshot("suggestion3.png")
+
+
             # clicked = driver.execute_script("""
             #     const element = document.getElementById(arguments[0]);
             #     if (element && element.textContent === arguments[1]) {
