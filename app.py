@@ -386,15 +386,18 @@ def get_suggestion_link():
                 
             print(original_url)
             print(driver.current_url)
-            # Wait for URL to change
+            # Wait for either URL change OR content update
             WebDriverWait(driver, 10).until(
-                lambda d: d.current_url != original_url
+                lambda d: d.current_url != original_url or d.execute_script("""
+                    // Check if the page content has been updated
+                    const mainContent = document.querySelector('.main-content');
+                    return mainContent && mainContent.getAttribute('data-loaded') === 'true';
+                """)
             )
-            print("url changed")
-            driver.save_screenshot("suggestion4.png")
-            print(original_url)
-            print(driver.current_url)
-            # Get the final URL
+            
+            # Short pause to ensure complete load
+            time.sleep(1)
+            
             final_url = driver.current_url
             driver.quit()
             
@@ -404,11 +407,12 @@ def get_suggestion_link():
             })
             
         except Exception as e:
-            print(f"Error processing suggestion: {str(e)}")
+            print(f"Error waiting for navigation: {str(e)}")
+            driver.save_screenshot("navigation_error.png")
             driver.quit()
             return jsonify({
                 'success': False,
-                'error': str(e)
+                'error': 'Navigation failed after clicking suggestion'
             }), 500
             
     except Exception as e:
