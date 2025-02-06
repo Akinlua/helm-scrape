@@ -383,12 +383,17 @@ def get_suggestion_link():
                     'success': False,
                     'error': 'Could not find or click the suggestion'
                 }), 404
-            
+                
+            print(original_url)
+            print(driver.current_url)
             # Wait for URL to change
             WebDriverWait(driver, 10).until(
                 lambda d: d.current_url != original_url
             )
-            
+            print("url changed")
+            driver.save_screenshot("suggestion4.png")
+            print(original_url)
+            print(driver.current_url)
             # Get the final URL
             final_url = driver.current_url
             driver.quit()
