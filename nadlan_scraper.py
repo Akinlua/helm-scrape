@@ -166,7 +166,7 @@ def scrape_nadlan_deals(url, page=None):
                 print("Navigating to next page...")
                 try:
                     # Wait for next button to be clickable
-                    next_button = WebDriverWait(driver, 5).until(lambda d: get_next_button(d))
+                    next_button = WebDriverWait(driver, 15).until(lambda d: get_next_button(d))
                     # next_button = WebDriverWait(driver, 5).until(
                     #     EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
                     # )
@@ -195,7 +195,7 @@ def scrape_nadlan_deals(url, page=None):
             # Wait until rows are present in the visible table
             try:
                 print("checks")
-                WebDriverWait(driver, 5).until(
+                WebDriverWait(driver, 15).until(
                     lambda d: d.execute_script(
                         """
                         const sections = Array.from(document.querySelectorAll('.transactionsSection'));
@@ -278,7 +278,7 @@ def scrape_nadlan_deals(url, page=None):
                     # )
                     
                      # Wait until rows are present in the visible table
-                    WebDriverWait(driver, 5).until(
+                    WebDriverWait(driver, 15).until(
                         lambda d: d.execute_script(
                             """
                             const sections = Array.from(document.querySelectorAll('.transactionsSection'));
@@ -305,7 +305,7 @@ def scrape_nadlan_deals(url, page=None):
                     page_rows_html += driver.execute_script(extract_rows_script)
                     
                     # Wait for next button to be clickable
-                    next_button = WebDriverWait(driver, 5).until(lambda d: get_next_button(d))
+                    next_button = WebDriverWait(driver, 15).until(lambda d: get_next_button(d))
                     # next_button = WebDriverWait(driver, 10).until(
                     #     EC.element_to_be_clickable((By.CSS_SELECTOR, 'ul[data-v-26d3d030].pagination #next:not([disabled])'))
                     # )
