@@ -7,6 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import time
 import os
+import traceback
+import base64
 
 def setup_driver():
     options = webdriver.ChromeOptions()
@@ -73,6 +75,9 @@ def scrape_nadlan_deals(url, page=None):
 
         print("Table found...")
 
+        print(driver.page_source)
+
+        print("now header")
         header_html = WebDriverWait(driver, 10).until(
             lambda d: d.execute_script(
                 """
@@ -92,6 +97,71 @@ def scrape_nadlan_deals(url, page=None):
         # ).get_attribute('outerHTML')
         
         print(f"Header HTML: {header_html[:100]}...")
+
+        # Take a screenshot of the current page for debugging
+        screenshot_path = "test1html.png"
+        if save_full_page_screenshot(driver, screenshot_path):
+            print(f"Screenshot saved to {screenshot_path}")
+        else:
+            print(f"Screenshot saved (viewport only) to {screenshot_path}")
+
+
+        time.sleep(15)
+
+        # Ensure table rows are present before reading pagination
+        WebDriverWait(driver, 15).until(
+            lambda d: d.execute_script(
+                """
+                const sections = Array.from(document.querySelectorAll('.transactionsSection'));
+                const visibleSection = sections.find(sec => getComputedStyle(sec).display !== 'none');
+                if (!visibleSection) return false;
+                const table = visibleSection.querySelector('table#dealsTable.mainTable');
+                return table && table.querySelectorAll('tbody tr').length > 0;
+                """
+            )
+        )
+
+        test_html = WebDriverWait(driver, 10).until(
+            lambda d: d.execute_script(
+                """
+                // Get all sections with class "transactionsSection"
+                const sections = Array.from(document.querySelectorAll('.transactionsSection'));
+                // Filter out any section that is wrapped by a div with "display: none"
+                const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
+                if (!visibleSection) return null;
+                const header = visibleSection.querySelector('.paginate');
+                return header ? header.outerHTML : null;
+                """
+            )
+        )
+
+        print(f"Test HTML: {test_html}...")
+
+
+        test2_html = WebDriverWait(driver, 10).until(
+            lambda d: d.execute_script(
+                """
+                // Get all sections with class "transactionsSection"
+                const sections = Array.from(document.querySelectorAll('.transactionsSection'));
+                // Filter out any section that is wrapped by a div with "display: none"
+                const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
+                if (!visibleSection) return null;
+                const header = visibleSection.querySelector('.paginate');
+                const text = header.textContent || "";
+                return text;
+                """
+            )
+        )
+
+        print(f"Test2 HTML: {test2_html}...")
+
+        # Take a screenshot of the current page for debugging
+        screenshot_path = "test2html.png"
+        if save_full_page_screenshot(driver, screenshot_path):
+            print(f"Screenshot saved to {screenshot_path}")
+        else:
+            print(f"Screenshot saved (viewport only) to {screenshot_path}")
+
         total_pages = 0
         try:
             total_pages = WebDriverWait(driver, 10).until(
@@ -118,12 +188,23 @@ def scrape_nadlan_deals(url, page=None):
             )
 
             if total_pages == 0:
-                print("Could not find the total pages.")
+                print("Could not find the total pages normally.")
             else:
                 print("Total pages:", total_pages)
-        except:
-            print("Could not find the total pages.")
-
+        except Exception as e:
+            print("Could not find the total pages. got error")
+            print(f"Exception type: {type(e).__name__}")
+            print(f"Exception repr: {repr(e)}")
+            if hasattr(e, 'msg'):
+                print(f"Exception msg: {e.msg}")
+            if hasattr(e, 'stacktrace') and e.stacktrace:
+                print("Selenium stacktrace:")
+                try:
+                    print("\n".join(e.stacktrace))
+                except Exception:
+                    print(e.stacktrace)
+            print("Traceback:")
+            print(traceback.format_exc())
 
 
 
@@ -214,7 +295,7 @@ def scrape_nadlan_deals(url, page=None):
                 # )
                 time.sleep(1)
             except Exception as wait_error:
-                page_source_snippet = driver.page_source[:1000]
+                page_source_snippet = driver.page_source
                 print("Error waiting for rows. Page source snippet:")
                 print(page_source_snippet)
                 final_table_html = f'<table>{header_html}</table>'
@@ -348,4 +429,36 @@ def scrape_nadlan_deals(url, page=None):
         return {
             'success': False,
             'error': str(e)
-        } 
+        }
+
+
+
+def save_full_page_screenshot(driver, path):
+    try:
+        driver.execute_cdp_cmd("Page.enable", {})
+        metrics = driver.execute_cdp_cmd("Page.getLayoutMetrics", {})
+        content_size = metrics.get("contentSize", {})
+        width = int(content_size.get("width", 1200))
+        height = int(content_size.get("height", 800))
+        shot = driver.execute_cdp_cmd("Page.captureScreenshot", {
+            "format": "png",
+            "fromSurface": True,
+            "captureBeyondViewport": True,
+            "clip": {"x": 0, "y": 0, "width": width, "height": height, "scale": 1}
+        })
+        data = shot.get("data")
+        if data:
+            with open(path, "wb") as f:
+                f.write(base64.b64decode(data))
+            return True
+    except Exception:
+        pass
+    # Fallback to viewport-based approach
+    try:
+        total_width = driver.execute_script("return Math.max(document.body.scrollWidth, document.documentElement.scrollWidth);")
+        total_height = driver.execute_script("return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);")
+        driver.set_window_size(total_width, total_height)
+        driver.execute_script("window.scrollTo(0, 0)")
+        return driver.save_screenshot(path)
+    except Exception:
+        return False
