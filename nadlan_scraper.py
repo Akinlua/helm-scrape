@@ -9,12 +9,19 @@ import time
 import os
 import traceback
 import base64
+from urllib.parse import urlparse
+
+# try:
+from seleniumwire import webdriver as wire_webdriver
+SELENIUM_WIRE_AVAILABLE = True
+# except ImportError:
+#     SELENIUM_WIRE_AVAILABLE = False
 
 def setup_driver():
     options = webdriver.ChromeOptions()
     
     # Add performance-focused arguments
-    options.add_argument('--headless=new')  # New headless mode
+    # options.add_argument('--headless=new')  # New headless mode
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-infobars')
     options.add_argument('--disable-dev-shm-usage')
@@ -27,7 +34,8 @@ def setup_driver():
     options.add_argument('--disable-web-security')
     options.add_argument('--allow-running-insecure-content')
     options.add_argument('--disable-features=IsolateOrigins,site-per-process')
-    
+    options.add_argument('--disable-quic')
+
     # Disable unnecessary features
     prefs = {
         'profile.default_content_setting_values': {
@@ -59,7 +67,31 @@ def setup_driver():
     options.add_experimental_option('prefs', prefs)
     
     service = Service(log_output=os.devnull)
-    return webdriver.Chrome(options=options, service=service)
+
+    # Proxy config (Selenium Wire preferred)
+    proxy_url = 'http://brd-customer-hl_2bff2960-zone-residential_proxy1-country-il:g3v45vaqd4iz@brd.superproxy.io:33335'
+    parsed = urlparse(proxy_url)
+
+    if SELENIUM_WIRE_AVAILABLE:
+        print("Using Selenium Wire for proxy")
+        seleniumwire_options = {
+            'proxy': {
+                'http': proxy_url,
+                'https': proxy_url,
+                'no_proxy': 'localhost,127.0.0.1'
+            }
+        }
+        return wire_webdriver.Chrome(options=options, seleniumwire_options=seleniumwire_options, service=service)
+    else:
+        # If proxy requires auth, Chrome's --proxy-server with credentials can cause ERR_NO_SUPPORTED_PROXIES.
+        if parsed.username or parsed.password:
+            raise RuntimeError(
+                "Authenticated proxies require Selenium Wire. Install via 'pip install selenium-wire' or add it to requirements.txt."
+            )
+        # Unauthenticated proxy fallback
+        options.add_argument(f'--proxy-server={proxy_url}')
+        print("Using Chrome --proxy-server fallback (no auth)")
+        return webdriver.Chrome(options=options, service=service)
 
 def scrape_nadlan_deals(url, page=None):
     try:
@@ -67,6 +99,7 @@ def scrape_nadlan_deals(url, page=None):
         driver.get(url)
         
         print("Starting scrape...")
+        time.sleep(1000)
         
         # Wait for initial table load
         WebDriverWait(driver, 10).until(
@@ -109,17 +142,17 @@ def scrape_nadlan_deals(url, page=None):
         time.sleep(15)
 
         # Ensure table rows are present before reading pagination
-        WebDriverWait(driver, 15).until(
-            lambda d: d.execute_script(
-                """
-                const sections = Array.from(document.querySelectorAll('.transactionsSection'));
-                const visibleSection = sections.find(sec => getComputedStyle(sec).display !== 'none');
-                if (!visibleSection) return false;
-                const table = visibleSection.querySelector('table#dealsTable.mainTable');
-                return table && table.querySelectorAll('tbody tr').length > 0;
-                """
-            )
-        )
+        # WebDriverWait(driver, 15).until(
+        #     lambda d: d.execute_script(
+        #         """
+        #         const sections = Array.from(document.querySelectorAll('.transactionsSection'));
+        #         const visibleSection = sections.find(sec => getComputedStyle(sec).display !== 'none');
+        #         if (!visibleSection) return false;
+        #         const table = visibleSection.querySelector('table#dealsTable.mainTable');
+        #         return table && table.querySelectorAll('tbody tr').length > 0;
+        #         """
+        #     )
+        # )
 
         test_html = WebDriverWait(driver, 10).until(
             lambda d: d.execute_script(
