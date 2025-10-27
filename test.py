@@ -1,8 +1,8 @@
 import urllib.request
 import ssl
 
-proxy = 'http://brd-customer-hl_2bff2960-zone-residential_proxy1-country-il:g3v45vaqd4iz@brd.superproxy.io:33335'
-url = ' https://geo.brdtest.com/mygeo.json'
+proxy = 'http://brd-customer-hl_67f2d9ee-zone-residential_proxy1-country-il:vrqfz1kw74ec@brd.superproxy.io:33335'
+url = 'https://geo.brdtest.com/mygeo.json'
 
 opener = urllib.request.build_opener(
     urllib.request.ProxyHandler({'https': proxy, 'http': proxy}),

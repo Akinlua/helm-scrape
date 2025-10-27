@@ -69,7 +69,7 @@ def setup_driver():
     service = Service(log_output=os.devnull)
 
     # Proxy config (Selenium Wire preferred)
-    proxy_url = 'http://brd-customer-hl_2bff2960-zone-residential_proxy1-country-il:g3v45vaqd4iz@brd.superproxy.io:33335'
+    proxy_url = 'http://brd-customer-hl_67f2d9ee-zone-residential_proxy1-country-il:vrqfz1kw74ec@brd.superproxy.io:33335'
     parsed = urlparse(proxy_url)
 
     if SELENIUM_WIRE_AVAILABLE:
