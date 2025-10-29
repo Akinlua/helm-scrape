@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 
 # try:
 from seleniumwire import webdriver as wire_webdriver
-SELENIUM_WIRE_AVAILABLE = True
+SELENIUM_WIRE_AVAILABLE = False
 # except ImportError:
 #     SELENIUM_WIRE_AVAILABLE = False
 
@@ -84,13 +84,13 @@ def setup_driver():
         return wire_webdriver.Chrome(options=options, seleniumwire_options=seleniumwire_options, service=service)
     else:
         # If proxy requires auth, Chrome's --proxy-server with credentials can cause ERR_NO_SUPPORTED_PROXIES.
-        if parsed.username or parsed.password:
-            raise RuntimeError(
-                "Authenticated proxies require Selenium Wire. Install via 'pip install selenium-wire' or add it to requirements.txt."
-            )
+        # if parsed.username or parsed.password:
+        #     raise RuntimeError(
+        #         "Authenticated proxies require Selenium Wire. Install via 'pip install selenium-wire' or add it to requirements.txt."
+        #     )
         # Unauthenticated proxy fallback
-        options.add_argument(f'--proxy-server={proxy_url}')
-        print("Using Chrome --proxy-server fallback (no auth)")
+        # options.add_argument(f'--proxy-server={proxy_url}')
+        # print("Using Chrome --proxy-server fallback (no auth)")
         return webdriver.Chrome(options=options, service=service)
 
 def scrape_nadlan_deals(url, page=None):
