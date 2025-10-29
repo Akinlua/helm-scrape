@@ -12,7 +12,7 @@ import base64
 from urllib.parse import urlparse
 
 # try:
-from seleniumwire import webdriver as wire_webdriver
+# from seleniumwire import webdriver as wire_webdriver
 SELENIUM_WIRE_AVAILABLE = False
 # except ImportError:
 #     SELENIUM_WIRE_AVAILABLE = False
@@ -72,17 +72,17 @@ def setup_driver():
     proxy_url = 'http://brd-customer-hl_67f2d9ee-zone-residential_proxy1-country-il:vrqfz1kw74ec@brd.superproxy.io:33335'
     parsed = urlparse(proxy_url)
 
-    if SELENIUM_WIRE_AVAILABLE:
-        print("Using Selenium Wire for proxy")
-        seleniumwire_options = {
-            'proxy': {
-                'http': proxy_url,
-                'https': proxy_url,
-                'no_proxy': 'localhost,127.0.0.1'
-            }
-        }
-        return wire_webdriver.Chrome(options=options, seleniumwire_options=seleniumwire_options, service=service)
-    else:
+    # if SELENIUM_WIRE_AVAILABLE:
+    #     print("Using Selenium Wire for proxy")
+    #     seleniumwire_options = {
+    #         'proxy': {
+    #             'http': proxy_url,
+    #             'https': proxy_url,
+    #             'no_proxy': 'localhost,127.0.0.1'
+    #         }
+    #     }
+    #     return wire_webdriver.Chrome(options=options, seleniumwire_options=seleniumwire_options, service=service)
+    # else:
         # If proxy requires auth, Chrome's --proxy-server with credentials can cause ERR_NO_SUPPORTED_PROXIES.
         # if parsed.username or parsed.password:
         #     raise RuntimeError(
@@ -91,7 +91,7 @@ def setup_driver():
         # Unauthenticated proxy fallback
         # options.add_argument(f'--proxy-server={proxy_url}')
         # print("Using Chrome --proxy-server fallback (no auth)")
-        return webdriver.Chrome(options=options, service=service)
+    return webdriver.Chrome(options=options, service=service)
 
 def scrape_nadlan_deals(url, page=None):
     try:
