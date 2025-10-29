@@ -139,7 +139,7 @@ def scrape_nadlan_deals(url, page=None):
             print(f"Screenshot saved (viewport only) to {screenshot_path}")
 
 
-        time.sleep(15)
+        # time.sleep(15)
 
         # Ensure table rows are present before reading pagination
         # WebDriverWait(driver, 15).until(
@@ -154,46 +154,46 @@ def scrape_nadlan_deals(url, page=None):
         #     )
         # )
 
-        test_html = WebDriverWait(driver, 10).until(
-            lambda d: d.execute_script(
-                """
-                // Get all sections with class "transactionsSection"
-                const sections = Array.from(document.querySelectorAll('.transactionsSection'));
-                // Filter out any section that is wrapped by a div with "display: none"
-                const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
-                if (!visibleSection) return null;
-                const header = visibleSection.querySelector('.paginate');
-                return header ? header.outerHTML : null;
-                """
-            )
-        )
+        # test_html = WebDriverWait(driver, 10).until(
+        #     lambda d: d.execute_script(
+        #         """
+        #         // Get all sections with class "transactionsSection"
+        #         const sections = Array.from(document.querySelectorAll('.transactionsSection'));
+        #         // Filter out any section that is wrapped by a div with "display: none"
+        #         const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
+        #         if (!visibleSection) return null;
+        #         const header = visibleSection.querySelector('.paginate');
+        #         return header ? header.outerHTML : null;
+        #         """
+        #     )
+        # )
 
-        print(f"Test HTML: {test_html}...")
+        # print(f"Test HTML: {test_html}...")
 
 
-        test2_html = WebDriverWait(driver, 10).until(
-            lambda d: d.execute_script(
-                """
-                // Get all sections with class "transactionsSection"
-                const sections = Array.from(document.querySelectorAll('.transactionsSection'));
-                // Filter out any section that is wrapped by a div with "display: none"
-                const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
-                if (!visibleSection) return null;
-                const header = visibleSection.querySelector('.paginate');
-                const text = header.textContent || "";
-                return text;
-                """
-            )
-        )
+        # test2_html = WebDriverWait(driver, 10).until(
+        #     lambda d: d.execute_script(
+        #         """
+        #         // Get all sections with class "transactionsSection"
+        #         const sections = Array.from(document.querySelectorAll('.transactionsSection'));
+        #         // Filter out any section that is wrapped by a div with "display: none"
+        #         const visibleSection = sections.find(sec => !sec.closest('div[style*="display: none"]'));
+        #         if (!visibleSection) return null;
+        #         const header = visibleSection.querySelector('.paginate');
+        #         const text = header.textContent || "";
+        #         return text;
+        #         """
+        #     )
+        # )
 
-        print(f"Test2 HTML: {test2_html}...")
+        # print(f"Test2 HTML: {test2_html}...")
 
         # Take a screenshot of the current page for debugging
-        screenshot_path = "test2html.png"
-        if save_full_page_screenshot(driver, screenshot_path):
-            print(f"Screenshot saved to {screenshot_path}")
-        else:
-            print(f"Screenshot saved (viewport only) to {screenshot_path}")
+        # screenshot_path = "test2html.png"
+        # if save_full_page_screenshot(driver, screenshot_path):
+        #     print(f"Screenshot saved to {screenshot_path}")
+        # else:
+        #     print(f"Screenshot saved (viewport only) to {screenshot_path}")
 
         total_pages = 0
         try:
